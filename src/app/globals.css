@@ -1,0 +1,226 @@
+@import 'tailwindcss';
+
+/* Theme is driven by [data-theme] on <html> (set before paint by the inline script in layout.tsx). */
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+/* ------------------------------------------------------------------ */
+/* Raw palette                                                         */
+/* ------------------------------------------------------------------ */
+@theme {
+  /* LCD (DMG palette) */
+  --color-lcd-900: #0f380f;
+  --color-lcd-700: #306230;
+  --color-lcd-400: #8bac0f;
+  --color-lcd-200: #9bbc0f;
+  --color-lcd-50: #e0f0c0;
+
+  /* Handheld shell */
+  --color-shell-950: #141416;
+  --color-shell-900: #1e1e22;
+  --color-shell-800: #2b2b30;
+  --color-shell-600: #4a4a52;
+  --color-shell-300: #a9a9b2;
+  --color-shell-100: #dcdcd6;
+
+  /* Platform accents */
+  --color-gb: #8bac0f;
+  --color-gbc: #8e44ad;
+  --color-gbc-soft: #c39bd3;
+  --color-gbc-deep: #4a1d63;
+  --color-gbc-50: #efe3f5;
+
+  /* Manual paper */
+  --color-paper: #f4efe1;
+  --color-ink: #1b1b1b;
+
+  /* Signals */
+  --color-power: #e5322d;
+  --color-sticker: #ffd23f;
+  --color-sticker-red: #c0211c; /* darker than the LED so white text passes AA */
+
+  /* Cartridge plastics */
+  --color-cart-grey: #b8b8b2;
+  --color-cart-grey-dark: #8f8f89;
+  --color-cart-black: #2a2a2f;
+  --color-cart-black-dark: #18181b;
+
+  --font-pixel: var(--font-press-start), ui-monospace, monospace;
+  --font-display: var(--font-silkscreen), ui-monospace, monospace;
+  --font-sans: var(--font-plex-sans), system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
+
+  --animate-blink: blink 1s steps(1, end) infinite;
+  --animate-led-on: led-on 600ms steps(3, end) both;
+  --animate-pixel-in: pixel-in 300ms steps(4, end) both;
+
+  @keyframes blink {
+    50% {
+      opacity: 0;
+    }
+  }
+  @keyframes led-on {
+    0% {
+      opacity: 0.15;
+      box-shadow: none;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+  @keyframes pixel-in {
+    0% {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    100% {
+      opacity: 1;
+      transform: none;
+    }
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Semantic tokens (switch per theme)                                  */
+/* ------------------------------------------------------------------ */
+:root,
+[data-theme='dark'] {
+  --bg: var(--color-shell-950);
+  --surface: var(--color-shell-900);
+  --surface-2: var(--color-shell-800);
+  --border: var(--color-shell-600);
+  --text: #ececea;
+  --text-muted: var(--color-shell-300);
+  --accent-gb-text: var(--color-lcd-200);
+  --accent-gbc-text: var(--color-gbc-soft);
+  --focus: var(--color-sticker);
+  --texture-dot: rgb(255 255 255 / 0.025);
+  color-scheme: dark;
+}
+
+[data-theme='light'] {
+  --bg: var(--color-shell-100);
+  --surface: var(--color-paper);
+  --surface-2: #e9e3d1;
+  --border: #8c8c86;
+  --text: var(--color-ink);
+  --text-muted: #45454c;
+  --accent-gb-text: var(--color-lcd-700);
+  --accent-gbc-text: #6c3483;
+  --focus: var(--color-lcd-900);
+  --texture-dot: rgb(0 0 0 / 0.035);
+  color-scheme: light;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--border);
+  --color-fg: var(--text);
+  --color-fg-muted: var(--text-muted);
+  --color-gb-text: var(--accent-gb-text);
+  --color-gbc-text: var(--accent-gbc-text);
+  --color-focus: var(--focus);
+}
+
+/* ------------------------------------------------------------------ */
+/* Base                                                                */
+/* ------------------------------------------------------------------ */
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--bg);
+    /* very subtle moulded-plastic texture */
+    background-image: radial-gradient(var(--texture-dot) 1px, transparent 1px);
+    background-size: 4px 4px;
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    line-height: 1.6;
+  }
+
+  :focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 3px;
+  }
+
+  ::selection {
+    background: var(--color-lcd-200);
+    color: var(--color-lcd-900);
+  }
+
+  img.pixelated,
+  .pixelated img {
+    image-rendering: pixelated;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Retro utilities                                                     */
+/* ------------------------------------------------------------------ */
+
+/* Stepped "pixel" border with notched corners, drawn with box-shadow so it
+   never affects layout. Colour comes from --pixel-border. */
+@utility pixel-border {
+  --pixel-border: var(--border);
+  box-shadow:
+    0 -4px 0 0 var(--pixel-border),
+    0 4px 0 0 var(--pixel-border),
+    -4px 0 0 0 var(--pixel-border),
+    4px 0 0 0 var(--pixel-border);
+}
+
+/* Very subtle scanlines over LCD surfaces. */
+@utility scanlines {
+  position: relative;
+  isolation: isolate;
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      to bottom,
+      rgb(0 0 0 / 0.06) 0,
+      rgb(0 0 0 / 0.06) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+    z-index: 1;
+  }
+}
+
+/* Cartridge silhouette: one cut corner top-right. */
+@utility cart-shape {
+  clip-path: polygon(0 0, calc(100% - 14%) 0, 100% 10%, 100% 100%, 0 100%);
+}
+
+/* ------------------------------------------------------------------ */
+/* Reduced effects: OS setting or the in-app toggle                    */
+/* ------------------------------------------------------------------ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .scanlines::after {
+    display: none;
+  }
+}
+
+[data-effects='reduced'] *,
+[data-effects='reduced'] *::before,
+[data-effects='reduced'] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+[data-effects='reduced'] .scanlines::after {
+  display: none;
+}
