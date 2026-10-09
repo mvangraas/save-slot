@@ -13,7 +13,8 @@ export type CartridgeCardProps = {
   owned?: boolean
   wishlisted?: boolean
   href?: string
-  size?: 'sm' | 'md' | 'lg'
+  /** `fluid` fills its grid cell. */
+  size?: 'sm' | 'md' | 'lg' | 'fluid'
   className?: string
 }
 
@@ -37,8 +38,13 @@ const label: Record<CartCompat, string> = {
   gbc_only: 'bg-[linear-gradient(180deg,var(--color-gbc-50),var(--color-gbc-soft))] text-gbc-deep',
 }
 
-const widths = { sm: 'w-32', md: 'w-44', lg: 'w-56' } as const
-const titleSize = { sm: 'text-[0.5rem]', md: 'text-[0.625rem]', lg: 'text-xs' } as const
+const widths = { sm: 'w-32', md: 'w-44', lg: 'w-56', fluid: 'w-full' } as const
+const titleSize = {
+  sm: 'text-[0.5rem]',
+  md: 'text-[0.625rem]',
+  lg: 'text-xs',
+  fluid: 'text-[0.5rem] sm:text-[0.5625rem] lg:text-[0.625rem]',
+} as const
 
 /**
  * A game shown as a cartridge: one cut corner, grip grooves on top and a label
@@ -82,7 +88,9 @@ export function CartridgeCard({
           <PlatformBadge platform={platform} />
           {year ? <span className="font-display text-[0.6875rem] leading-none">{year}</span> : null}
         </div>
-        <p className={cn('font-pixel leading-relaxed break-words', titleSize[size])}>{title}</p>
+        <p className={cn('line-clamp-4 font-pixel leading-relaxed break-words', titleSize[size])}>
+          {title}
+        </p>
         {regions.length > 0 ? (
           <div className="flex flex-wrap gap-1">
             {regions.map((r) => (

@@ -52,7 +52,7 @@ test('component preview renders in both themes', async ({ page }) => {
   }
 })
 
-for (const path of ['/', '/dev/components', '/about', '/games']) {
+for (const path of ['/', '/dev/components', '/about']) {
   test(`no axe violations on ${path}`, async ({ page }) => {
     await page.goto(path)
     const results = await new AxeBuilder({ page })

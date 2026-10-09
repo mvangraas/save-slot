@@ -20,8 +20,17 @@ cp .env.example .env.local   # Supabase values are optional for now
 pnpm dev                     # http://localhost:3000
 ```
 
-The app runs without Supabase configured; auth simply shows "Sign in".
-The design system preview is at `/dev/components` (development only).
+Without Supabase env vars the app uses the built-in **seed catalogue** (39 games from
+`src/data/seed/catalog.ts`), so everything works offline. With the Supabase values in
+`.env.local` it reads the real database. The design system preview is at `/dev/components`
+(development only).
+
+### Database
+
+- Migrations: `supabase/migrations/*.sql` (schema, RLS, search RPC, views)
+- Seed: `src/data/seed/catalog.ts` → `pnpm seed:generate` → `supabase/seed.sql`
+- RLS tests: `supabase/tests/rls_test.sql` (always rolls back; success = `RLS TESTS PASSED`)
+- Types: `pnpm db:types` → `src/lib/supabase/database.types.ts`
 
 ### Local Supabase (optional)
 

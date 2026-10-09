@@ -1,8 +1,11 @@
 import type { Metadata } from 'next'
-import { ComingSoon } from '@/components/ComingSoon'
+import { PlatformHub } from '@/components/catalog/PlatformHub'
 
-export const metadata: Metadata = { title: 'Game Boy Color' }
+export const metadata: Metadata = {
+  title: 'Game Boy Color',
+  description: 'Browse every Game Boy Color game in the Save Slot archive.',
+}
 
-export default function Page() {
-  return <ComingSoon title="GAME BOY COLOR" phase={2} tone="gbc" />
+export default function GameBoyColorPage({ searchParams }: PageProps<'/gbc'>) {
+  return <PlatformHub platform="gbc" searchParams={searchParams} />
 }

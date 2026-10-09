@@ -2,8 +2,8 @@ import { CartridgeCard } from '@/components/retro/CartridgeCard'
 import { LcdPanel } from '@/components/retro/LcdPanel'
 import { PixelButton } from '@/components/retro/PixelButton'
 import { PlatformBadge } from '@/components/retro/PlatformBadge'
-import { previewShelf } from '@/data/preview-shelf'
 import Link from 'next/link'
+import { getFacets, searchGames } from '@/lib/catalog'
 
 const loop = [
   { step: 'Discover', text: 'Browse every Game Boy and Game Boy Color release.' },
@@ -14,7 +14,11 @@ const loop = [
   { step: 'Remember', text: 'Write down the memories behind each cartridge.' },
 ]
 
-export default function HomePage() {
+export default async function HomePage() {
+  const [facets, shelf] = await Promise.all([
+    getFacets(),
+    searchGames({ filters: {}, sort: 'year_asc', page: 1, pageSize: 8 }),
+  ])
   return (
     <div className="space-y-14">
       <LcdPanel as="section" bezelLabel="Collector archive" aria-labelledby="hero-title">
@@ -58,6 +62,7 @@ export default function HomePage() {
                 <PlatformBadge platform="gb" size="md" />
               </div>
               <p className="mt-3 text-sm">Four shades of green. Where it all began.</p>
+              <p className="mt-3 font-pixel text-[0.625rem]">{facets.platformCounts.gb} GAMES</p>
             </LcdPanel>
           </Link>
           <Link href="/gbc" className="group block">
@@ -67,6 +72,7 @@ export default function HomePage() {
                 <PlatformBadge platform="gbc" size="md" />
               </div>
               <p className="mt-3 text-sm">Black dual-mode carts and clear colour-only carts.</p>
+              <p className="mt-3 font-pixel text-[0.625rem]">{facets.platformCounts.gbc} GAMES</p>
             </LcdPanel>
           </Link>
         </div>
@@ -77,14 +83,29 @@ export default function HomePage() {
           <h2 id="shelf-title" className="font-pixel text-sm sm:text-base">
             ON THE SHELF
           </h2>
-          <span className="font-display text-xs text-fg-muted uppercase">Preview</span>
+          <Link
+            href="/games?sort=year_asc"
+            className="font-display text-xs text-fg-muted uppercase hover:text-fg"
+          >
+            The first cartridges →
+          </Link>
         </div>
         <div className="rounded-sm bg-surface-2 px-4 pt-6 pb-0 shadow-[inset_0_-10px_0_0_var(--color-shell-950)]">
           {/* focusable so keyboard users can scroll the shelf */}
-          <ul tabIndex={0} className="flex gap-4 overflow-x-auto pb-6" aria-label="Preview shelf">
-            {previewShelf.map((g) => (
-              <li key={g.title}>
-                <CartridgeCard title={g.title} compat={g.compat} year={g.year} size="sm" />
+          <ul
+            tabIndex={0}
+            className="flex gap-4 overflow-x-auto pt-1 pb-6"
+            aria-label="On the shelf"
+          >
+            {shelf.items.map((g) => (
+              <li key={g.id}>
+                <CartridgeCard
+                  title={g.title}
+                  compat={g.compat}
+                  year={g.firstReleaseYear}
+                  href={`/games/${g.slug}`}
+                  size="sm"
+                />
               </li>
             ))}
           </ul>
