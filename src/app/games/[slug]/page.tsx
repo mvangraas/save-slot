@@ -1,11 +1,11 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { Suspense } from 'react'
 import { GameGrid } from '@/components/catalog/GameGrid'
+import { GameCollectionSections, GamePanel } from '@/components/game/GamePanel'
 import { CartridgeCard } from '@/components/retro/CartridgeCard'
-import { LcdPanel } from '@/components/retro/LcdPanel'
 import { ManualSection } from '@/components/retro/ManualSection'
-import { PixelButton } from '@/components/retro/PixelButton'
 import { PlatformBadge } from '@/components/retro/PlatformBadge'
 import { RegionTag } from '@/components/retro/RegionTag'
 import { Sticker } from '@/components/retro/Sticker'
@@ -131,6 +131,9 @@ export default async function GamePage({ params }: PageProps<'/games/[slug]'>) {
             </p>
           )}
         </ManualSection>
+        <Suspense fallback={null}>
+          <GameCollectionSections game={game} />
+        </Suspense>
       </div>
 
       {related.length > 0 ? (
@@ -231,17 +234,9 @@ function Header({ game }: { game: GameDetail }) {
           ) : null}
         </dl>
 
-        <LcdPanel scanlines={false} className="max-w-xl" screenClassName="p-3 sm:p-4">
-          <div className="flex flex-wrap items-center gap-3">
-            <PixelButton variant="screen" size="sm" disabled>
-              + Collection
-            </PixelButton>
-            <PixelButton variant="screen" size="sm" disabled>
-              ♥ Wishlist
-            </PixelButton>
-            <p className="text-sm">Collecting unlocks when sign-in arrives (phase 3).</p>
-          </div>
-        </LcdPanel>
+        <Suspense fallback={<div className="h-24 max-w-xl animate-pulse bg-surface-2" />}>
+          <GamePanel game={game} />
+        </Suspense>
       </div>
     </header>
   )

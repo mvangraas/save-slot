@@ -129,6 +129,14 @@
 @layer base {
   html {
     -webkit-text-size-adjust: 100%;
+    /* keep focused/scrolled-to elements clear of the sticky header and mobile bottom nav */
+    scroll-padding-top: 6rem;
+    scroll-padding-bottom: 5rem;
+  }
+  @media (min-width: 64rem) {
+    html {
+      scroll-padding-bottom: 1rem;
+    }
   }
 
   body {

@@ -12,9 +12,10 @@ type Props = {
 
 /** A numbered "instruction booklet" page on paper. */
 export function ManualSection({ number, title, id, children, className }: Props) {
-  const headingId = id ?? `manual-${number}`
+  const headingId = `${id ?? `manual-${number}`}-title`
   return (
     <section
+      id={id}
       aria-labelledby={headingId}
       className={cn(
         'relative rounded-sm bg-paper p-5 text-ink shadow-[inset_0_0_0_2px_rgb(0_0_0/0.12),0_3px_0_0_rgb(0_0_0/0.35)] sm:p-7',

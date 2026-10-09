@@ -3,6 +3,8 @@ import { LcdPanel } from '@/components/retro/LcdPanel'
 import { PixelButton } from '@/components/retro/PixelButton'
 import { PlatformBadge } from '@/components/retro/PlatformBadge'
 import Link from 'next/link'
+import { Suspense } from 'react'
+import { MyCabinet } from '@/components/home/MyCabinet'
 import { getFacets, searchGames } from '@/lib/catalog'
 
 const loop = [
@@ -35,7 +37,7 @@ export default async function HomePage() {
             Rediscover the games that started it all.
           </p>
           <div className="mt-8 flex flex-wrap gap-4">
-            <PixelButton href="/login" size="lg" variant="screen">
+            <PixelButton href="/collection" size="lg" variant="screen">
               Press start
             </PixelButton>
             <PixelButton
@@ -49,6 +51,10 @@ export default async function HomePage() {
           </div>
         </div>
       </LcdPanel>
+
+      <Suspense fallback={null}>
+        <MyCabinet />
+      </Suspense>
 
       <section aria-labelledby="platforms-title">
         <h2 id="platforms-title" className="sr-only">

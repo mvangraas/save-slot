@@ -25,6 +25,10 @@ Without Supabase env vars the app uses the built-in **seed catalogue** (39 games
 `.env.local` it reads the real database. The design system preview is at `/dev/components`
 (development only).
 
+Accounts need Supabase. To try sign-in, collections and memories locally without Supabase,
+start with `SAVESLOT_MEMORY_BACKEND=1 pnpm dev`: an in-memory backend (data is gone on restart).
+The e2e tests use it too.
+
 ### Database
 
 - Migrations: `supabase/migrations/*.sql` (schema, RLS, search RPC, views)
