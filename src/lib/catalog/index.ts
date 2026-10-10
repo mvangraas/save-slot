@@ -62,3 +62,10 @@ export async function getPriceIndex() {
   cacheTag('catalog', 'prices')
   return getCatalog().priceIndex()
 }
+
+export async function getSourceCounts() {
+  'use cache'
+  cacheLife('hours')
+  cacheTag('catalog')
+  return getCatalog().sourceCounts()
+}

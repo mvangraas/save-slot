@@ -14,6 +14,9 @@ export function Footer() {
         <div className="flex flex-col items-start gap-1 sm:items-end">
           <EffectsToggle />
           <SoundToggle />
+          <Link href="/news" className="inline-flex min-h-11 items-center hover:text-fg">
+            News
+          </Link>
           <Link href="/about" className="inline-flex min-h-11 items-center hover:text-fg">
             About &amp; sources
           </Link>

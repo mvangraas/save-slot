@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>Fixture: Time Extension</title>
+    <item>
+      <title>A new Game Boy Color homebrew cart ships this winter</title>
+      <link>https://www.timeextension.com/news/fixture-gbc-homebrew</link>
+      <description><![CDATA[<p>The <strong>Game Boy Color</strong> scene keeps on giving &amp; this one has rumble.</p>]]></description>
+      <pubDate>Fri, 09 Oct 2026 10:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>A fixture story about a home console</title>
+      <link>https://www.timeextension.com/news/fixture-console</link>
+      <description>Nothing about handhelds here.</description>
+      <pubDate>Thu, 08 Oct 2026 10:00:00 GMT</pubDate>
+    </item>
+  </channel>
+</rss>

@@ -24,6 +24,12 @@ export default defineConfig({
     url: `http://localhost:${PORT}`,
     reuseExistingServer: !process.env.CI,
     timeout: 240_000,
-    env: { ENABLE_DEV_PAGES: '1', SAVESLOT_MEMORY_BACKEND: '1', E2E: '1' },
+    env: {
+      ENABLE_DEV_PAGES: '1',
+      SAVESLOT_MEMORY_BACKEND: '1',
+      E2E: '1',
+      NEWS_FIXTURES: '1',
+      CRON_SECRET: 'e2e-cron-secret-0123456789',
+    },
   },
 })

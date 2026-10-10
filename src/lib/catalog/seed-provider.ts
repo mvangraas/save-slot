@@ -214,6 +214,14 @@ export const seedCatalog: CatalogProvider = {
     return out
   },
 
+  async sourceCounts() {
+    return {
+      games: { seed: seedGames.length },
+      media: {},
+      prices: { seed: seedGames.reduce((n, g) => n + g.releases.length * 3, 0) },
+    }
+  },
+
   async suggest(q: string, limit: number): Promise<Suggestion[]> {
     const { items } = await this.search({
       q,

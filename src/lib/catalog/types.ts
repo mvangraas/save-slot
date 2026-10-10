@@ -105,6 +105,14 @@ export type ReleasePrices = {
   new: number | null
   source: string
   observedAt: string
+  /** Set when the source currency wasn't EUR and was converted for display. */
+  fx?: { from: string; rate: number }
+}
+
+export type SourceCounts = {
+  games: Record<string, number>
+  media: Record<string, number>
+  prices: Record<string, number>
 }
 
 /** releaseId → prices */
@@ -166,4 +174,6 @@ export interface CatalogProvider {
   /** Every game as a summary (for stats). */
   allGames(): Promise<GameSummary[]>
   priceIndex(): Promise<PriceIndex>
+  /** How many games, images and prices come from each data source (for /about credits). */
+  sourceCounts(): Promise<SourceCounts>
 }

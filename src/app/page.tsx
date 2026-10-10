@@ -5,6 +5,7 @@ import { PlatformBadge } from '@/components/retro/PlatformBadge'
 import Link from 'next/link'
 import { Suspense } from 'react'
 import { MyCabinet } from '@/components/home/MyCabinet'
+import { LatestNews } from '@/components/news/LatestNews'
 import { getFacets, searchGames } from '@/lib/catalog'
 
 const loop = [
@@ -136,6 +137,10 @@ export default async function HomePage() {
           ))}
         </ol>
       </section>
+
+      <Suspense fallback={null}>
+        <LatestNews />
+      </Suspense>
     </div>
   )
 }

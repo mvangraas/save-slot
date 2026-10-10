@@ -1,3 +1,4 @@
+import { buildPriceIndex, fxFromEnv } from './price-index'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/lib/supabase/database.types'
 import type { Region } from '@/lib/types'
@@ -9,7 +10,6 @@ import {
   type GameDetail,
   type GameQuery,
   type GameSummary,
-  type PriceIndex,
   type SearchResult,
 } from './types'
 
@@ -174,27 +174,48 @@ export function createSupabaseCatalog(db: SupabaseClient<Database>): CatalogProv
       const { data, error } = await db
         .from('price_points')
         .select(
-          'release_id, grade, value_cents, source, observed_at, release:releases!inner ( game_id, region )',
+          'release_id, grade, value_cents, currency, source, observed_at, release:releases!inner ( game_id, region )',
         )
-        .eq('currency', 'EUR')
         .order('observed_at', { ascending: false })
         .limit(20000)
       if (error) throw new Error(`priceIndex failed: ${error.message}`)
-      const out: PriceIndex = {}
-      for (const p of data) {
-        const entry = (out[p.release_id] ??= {
+      return buildPriceIndex(
+        data.map((p) => ({
+          releaseId: p.release_id,
           gameId: p.release.game_id,
           region: p.release.region,
-          loose: null,
-          cib: null,
-          new: null,
+          grade: p.grade,
+          valueCents: p.value_cents,
+          currency: p.currency,
           source: p.source,
           observedAt: p.observed_at,
-        })
-        // rows are newest first: keep the first value we see per grade
-        if (entry[p.grade] === null) entry[p.grade] = p.value_cents
+        })),
+        fxFromEnv(),
+      )
+    },
+
+    async sourceCounts() {
+      const sources = ['seed', 'igdb', 'thegamesdb', 'pricecharting', 'manual'] as const
+      const count = async (table: 'games' | 'media' | 'price_points') => {
+        const out: Record<string, number> = {}
+        await Promise.all(
+          sources.map(async (s) => {
+            const { count: n, error } = await db
+              .from(table)
+              .select('id', { count: 'exact', head: true })
+              .eq('source', s)
+            if (error) throw new Error(`sourceCounts ${table}: ${error.message}`)
+            if (n) out[s] = n
+          }),
+        )
+        return out
       }
-      return out
+      const [games, media, prices] = await Promise.all([
+        count('games'),
+        count('media'),
+        count('price_points'),
+      ])
+      return { games, media, prices }
     },
 
     async suggest(q: string, limit: number) {

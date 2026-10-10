@@ -298,12 +298,19 @@ function Releases({ game }: { game: GameDetail }) {
   )
 }
 
+const SOURCE_LABELS: Record<string, string> = {
+  pricecharting: 'PriceCharting',
+  manual: 'manual entry',
+}
+const sourceLabel = (s: string | undefined) => (s ? (SOURCE_LABELS[s] ?? s) : 'unknown')
+
 function Value({ game, prices }: { game: GameDetail; prices: PriceIndex }) {
   const rows = game.releases.map((r) => ({ r, p: prices[r.id] }))
   const any = rows.some((x) => x.p)
   if (!any) return <p>No price data for this game yet.</p>
   const demo = rows.some((x) => x.p?.source === 'seed')
-  const date = rows.find((x) => x.p)?.p?.observedAt.slice(0, 10)
+  const first = rows.find((x) => x.p)?.p
+  const date = first?.observedAt.slice(0, 10)
   return (
     <div className="space-y-3">
       {demo ? (
@@ -345,8 +352,13 @@ function Value({ game, prices }: { game: GameDetail; prices: PriceIndex }) {
         </table>
       </div>
       <p className="text-xs text-[#45454c]">
-        Estimate — not a quote. Source: {demo ? 'demo data' : rows.find((x) => x.p)?.p?.source},{' '}
-        {date}.
+        Estimate — not a quote. Source: {demo ? 'demo data' : sourceLabel(first?.source)}, {date}.
+        {first?.fx ? (
+          <>
+            {' '}
+            Converted from {first.fx.from} at {first.fx.rate} for display.
+          </>
+        ) : null}
       </p>
     </div>
   )

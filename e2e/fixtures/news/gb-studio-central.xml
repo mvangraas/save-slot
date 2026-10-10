@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>Fixture: GB Studio Central</title>
+  <entry>
+    <title>Fixture jam results are in</title>
+    <link rel="alternate" href="https://gbstudiocentral.com/fixture-jam-results/"/>
+    <published>2026-10-07T12:00:00Z</published>
+    <summary>Twelve new games made with GB Studio.</summary>
+  </entry>
+  <entry>
+    <title>Unsafe link is dropped</title>
+    <link href="javascript:alert(1)"/>
+    <published>2026-10-06T12:00:00Z</published>
+  </entry>
+</feed>

@@ -34,9 +34,10 @@ test('reduce effects toggle sets the html flag', async ({ page }) => {
   await expect(page.locator('html')).toHaveAttribute('data-effects', 'reduced')
 })
 
-test('navigation marks the current page', async ({ page }, testInfo) => {
-  await page.goto('/wishlist')
-  const name = testInfo.project.name === 'mobile' ? 'Wish' : 'Wishlist'
+test('navigation marks the current page', async ({ page }) => {
+  // A public page: signed-out visits to /wishlist redirect to /login, which raced this check.
+  await page.goto('/games')
+  const name = 'Games'
   await expect(page.getByRole('link', { name, exact: true })).toHaveAttribute(
     'aria-current',
     'page',
