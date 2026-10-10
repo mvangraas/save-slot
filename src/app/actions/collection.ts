@@ -2,7 +2,13 @@
 
 import { refresh } from 'next/cache'
 import { requireUser } from '@/lib/backend'
-import { collectionItemSchema, fieldErrors, idSchema, type FormState } from '@/lib/backend/schemas'
+import {
+  bulkSchema,
+  collectionItemSchema,
+  fieldErrors,
+  idSchema,
+  type FormState,
+} from '@/lib/backend/schemas'
 
 function itemFields(form: FormData) {
   return {
@@ -51,4 +57,33 @@ export async function removeCollectionItemAction(form: FormData): Promise<void> 
   if (!id.success) return
   await store.removeItem(id.data)
   refresh()
+}
+
+/** Bulk actions on selected copies in the collection table. */
+export async function bulkCollectionAction(_prev: FormState, form: FormData): Promise<FormState> {
+  const { store } = await requireUser('/collection?view=table')
+  const parsed = bulkSchema.safeParse({ op: form.get('op'), ids: form.getAll('ids') })
+  if (!parsed.success) return { message: fieldErrors(parsed.error).ids ?? 'Choose an action.' }
+  const { op, ids } = parsed.data
+
+  const mine = await store.listCollection()
+  const selected = mine.filter((i) => ids.includes(i.id))
+  if (selected.length === 0) return { message: 'Nothing selected.' }
+  const games = [...new Set(selected.map((i) => i.gameId))]
+
+  if (op === 'remove' || op === 'to-wishlist') {
+    for (const i of selected) await store.removeItem(i.id)
+    if (op === 'to-wishlist') for (const g of games) await store.setWishlisted(g, true)
+  } else {
+    for (const g of games) await store.setPlayStatus(g, op)
+  }
+  refresh()
+  const n = selected.length
+  const what =
+    op === 'remove'
+      ? 'removed'
+      : op === 'to-wishlist'
+        ? 'moved to your wishlist'
+        : `marked as ${op}`
+  return { ok: true, message: `${n} ${n === 1 ? 'copy' : 'copies'} ${what}.` }
 }

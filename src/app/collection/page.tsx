@@ -8,14 +8,14 @@ import { LoadingState } from '@/components/retro/LoadingState'
 import { PixelButton } from '@/components/retro/PixelButton'
 import { PixelProgress } from '@/components/retro/PixelProgress'
 import { PlatformBadge } from '@/components/retro/PlatformBadge'
-import { RegionTag } from '@/components/retro/RegionTag'
 import { requireUser } from '@/lib/backend'
 import { groupByGame, ownedPerPlatform, type OwnedGame } from '@/lib/backend/collection'
-import { conditionLabel, type CollectionItem, type PlayEntry } from '@/lib/backend/types'
-import { getFacets } from '@/lib/catalog'
+import type { CollectionItem, PlayEntry } from '@/lib/backend/types'
+import { getFacets, getPriceIndex } from '@/lib/catalog'
+import { itemValue } from '@/lib/backend/value'
+import { CopiesTable } from '@/components/collection/CopiesTable'
 import type { GameSummary } from '@/lib/catalog/types'
 import { cn } from '@/lib/cn'
-import { formatEuro } from '@/lib/format'
 
 export const metadata: Metadata = { title: 'My collection', robots: { index: false } }
 
@@ -63,11 +63,13 @@ async function CollectionBody({
   const view = (VIEWS.find(([v]) => v === params.view)?.[0] ?? 'shelf') as View
 
   const { store } = await requireUser(href(tab, view))
-  const [items, plays, facets] = await Promise.all([
+  const [items, plays, facets, prices] = await Promise.all([
     store.listCollection(),
     store.listPlayLogs(),
     getFacets(),
+    getPriceIndex(),
   ])
+  const values = Object.fromEntries(items.map((i) => [i.id, itemValue(i, prices)]))
   const owned = groupByGame(items)
   const perPlatform = ownedPerPlatform(owned)
 
@@ -156,6 +158,7 @@ async function CollectionBody({
           items={tab === 'all' ? items : items.filter((i) => i.platform === tab)}
           view={view}
           tab={tab}
+          values={values}
         />
       )}
     </div>
@@ -167,11 +170,13 @@ function OwnedView({
   items,
   view,
   tab,
+  values,
 }: {
   games: OwnedGame[]
   items: CollectionItem[]
   view: View
   tab: Tab
+  values: Record<string, number | null>
 }) {
   if (games.length === 0) {
     return (
@@ -189,7 +194,7 @@ function OwnedView({
       />
     )
   }
-  if (view === 'table') return <CopiesTable items={items} />
+  if (view === 'table') return <CopiesTable items={items} values={values} />
   if (view === 'grid') return <GameGrid items={games.map(toSummary)} />
 
   const byPlatform = (['gb', 'gbc'] as const)
@@ -234,71 +239,6 @@ const toSummary = (g: OwnedGame): GameSummary => ({
   owned: true,
   wishlisted: false,
 })
-
-function CopiesTable({ items }: { items: CollectionItem[] }) {
-  const yes = (b: boolean) => (b ? '✔' : '—')
-  return (
-    <div className="overflow-x-auto rounded-sm bg-surface">
-      <table className="w-full min-w-[44rem] border-collapse text-left text-sm">
-        <caption className="sr-only">Your copies</caption>
-        <thead>
-          <tr className="border-b-2 border-line font-display text-xs text-fg-muted uppercase">
-            <th scope="col" className="px-3 py-2">
-              Title
-            </th>
-            <th scope="col" className="px-3 py-2">
-              Platform
-            </th>
-            <th scope="col" className="px-3 py-2">
-              Region
-            </th>
-            <th scope="col" className="px-3 py-2">
-              Cart
-            </th>
-            <th scope="col" className="px-3 py-2">
-              Box
-            </th>
-            <th scope="col" className="px-3 py-2">
-              Manual
-            </th>
-            <th scope="col" className="px-3 py-2">
-              Condition
-            </th>
-            <th scope="col" className="px-3 py-2">
-              Paid
-            </th>
-            <th scope="col" className="px-3 py-2">
-              Bought
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {items.map((i) => (
-            <tr key={i.id} className="border-b border-line/50 last:border-0">
-              <th scope="row" className="px-3 py-2 font-medium">
-                <Link href={`/games/${i.gameSlug}#your-copies`} className="hover:underline">
-                  {i.gameTitle}
-                </Link>
-              </th>
-              <td className="px-3 py-2">
-                <PlatformBadge platform={i.platform} />
-              </td>
-              <td className="px-3 py-2">
-                <RegionTag region={i.region} />
-              </td>
-              <td className="px-3 py-2">{yes(i.hasCart)}</td>
-              <td className="px-3 py-2">{yes(i.hasBox)}</td>
-              <td className="px-3 py-2">{yes(i.hasManual)}</td>
-              <td className="px-3 py-2">{i.condition ? conditionLabel[i.condition] : '—'}</td>
-              <td className="px-3 py-2 font-mono">{formatEuro(i.purchasePriceCents) ?? '—'}</td>
-              <td className="px-3 py-2 font-mono">{i.purchasedOn ?? '—'}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  )
-}
 
 function PlayList({ entries, tab }: { entries: PlayEntry[]; tab: 'playing' | 'completed' }) {
   if (entries.length === 0) {

@@ -9,10 +9,11 @@ import { ManualSection } from '@/components/retro/ManualSection'
 import { PlatformBadge } from '@/components/retro/PlatformBadge'
 import { RegionTag } from '@/components/retro/RegionTag'
 import { Sticker } from '@/components/retro/Sticker'
-import { getGame, listGameSlugs, searchGames } from '@/lib/catalog'
+import { getGame, getPriceIndex, listGameSlugs, searchGames } from '@/lib/catalog'
+import { formatEuro } from '@/lib/format'
 import { PAGE_SIZE } from '@/lib/catalog/params'
 import { formatReleaseDate } from '@/lib/catalog/text'
-import { featureLabel, type GameDetail } from '@/lib/catalog/types'
+import { featureLabel, type GameDetail, type PriceIndex } from '@/lib/catalog/types'
 import { compatLabel } from '@/lib/types'
 
 export async function generateStaticParams() {
@@ -36,6 +37,7 @@ export default async function GamePage({ params }: PageProps<'/games/[slug]'>) {
   const { slug } = await params
   const game = await getGame(slug)
   if (!game) notFound()
+  const prices = await getPriceIndex()
 
   const related = game.series
     ? (
@@ -107,7 +109,16 @@ export default async function GamePage({ params }: PageProps<'/games/[slug]'>) {
           <p className="mt-4 text-xs text-[#45454c]">Only features we could verify are listed.</p>
         </ManualSection>
 
-        <ManualSection number={3} title="Box art & screenshots" className="lg:col-span-2">
+        <ManualSection
+          number={3}
+          title="Estimated collector value"
+          className="lg:col-span-2"
+          id="value"
+        >
+          <Value game={game} prices={prices} />
+        </ManualSection>
+
+        <ManualSection number={4} title="Box art & screenshots" className="lg:col-span-2">
           {game.media.length > 0 ? (
             <ul className="grid grid-cols-2 gap-4 sm:grid-cols-4">
               {game.media.map((m) => (
@@ -131,6 +142,7 @@ export default async function GamePage({ params }: PageProps<'/games/[slug]'>) {
             </p>
           )}
         </ManualSection>
+
         <Suspense fallback={null}>
           <GameCollectionSections game={game} />
         </Suspense>
@@ -282,6 +294,60 @@ function Releases({ game }: { game: GameDetail }) {
           ))}
         </tbody>
       </table>
+    </div>
+  )
+}
+
+function Value({ game, prices }: { game: GameDetail; prices: PriceIndex }) {
+  const rows = game.releases.map((r) => ({ r, p: prices[r.id] }))
+  const any = rows.some((x) => x.p)
+  if (!any) return <p>No price data for this game yet.</p>
+  const demo = rows.some((x) => x.p?.source === 'seed')
+  const date = rows.find((x) => x.p)?.p?.observedAt.slice(0, 10)
+  return (
+    <div className="space-y-3">
+      {demo ? (
+        <p className="inline-block bg-sticker px-2 py-1 font-display text-xs text-ink uppercase">
+          Demo prices — not real market data
+        </p>
+      ) : null}
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[22rem] border-collapse text-left text-sm">
+          <caption className="sr-only">Estimated value of {game.title} per release</caption>
+          <thead>
+            <tr className="border-b border-ink/40 font-display text-xs uppercase">
+              <th scope="col" className="py-1.5 pr-3">
+                Release
+              </th>
+              <th scope="col" className="py-1.5 pr-3">
+                Loose
+              </th>
+              <th scope="col" className="py-1.5 pr-3">
+                Complete in box
+              </th>
+              <th scope="col" className="py-1.5">
+                New / sealed
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map(({ r, p }) => (
+              <tr key={r.id} className="border-b border-ink/15 last:border-0">
+                <th scope="row" className="py-1.5 pr-3 font-normal">
+                  <RegionTag region={r.region} />
+                </th>
+                <td className="py-1.5 pr-3 font-mono">{formatEuro(p?.loose) ?? '—'}</td>
+                <td className="py-1.5 pr-3 font-mono">{formatEuro(p?.cib) ?? '—'}</td>
+                <td className="py-1.5 font-mono">{formatEuro(p?.new) ?? '—'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="text-xs text-[#45454c]">
+        Estimate — not a quote. Source: {demo ? 'demo data' : rows.find((x) => x.p)?.p?.source},{' '}
+        {date}.
+      </p>
     </div>
   )
 }

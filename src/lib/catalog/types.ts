@@ -91,7 +91,24 @@ export type Facets = {
   yearMin: number | null
   yearMax: number | null
   platformCounts: Record<Platform, number>
+  regionCounts: Record<Region, number>
 }
+
+export type PriceGrade = 'loose' | 'cib' | 'new'
+
+/** Latest estimate per grade for one release, in euro cents. */
+export type ReleasePrices = {
+  gameId: string
+  region: Region
+  loose: number | null
+  cib: number | null
+  new: number | null
+  source: string
+  observedAt: string
+}
+
+/** releaseId → prices */
+export type PriceIndex = Record<string, ReleasePrices>
 
 export type Named = { slug: string; name: string }
 
@@ -146,4 +163,7 @@ export interface CatalogProvider {
   getGame(slug: string): Promise<GameDetail | null>
   listSlugs(): Promise<string[]>
   suggest(q: string, limit: number): Promise<Suggestion[]>
+  /** Every game as a summary (for stats). */
+  allGames(): Promise<GameSummary[]>
+  priceIndex(): Promise<PriceIndex>
 }

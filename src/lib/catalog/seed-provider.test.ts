@@ -66,6 +66,7 @@ describe('seed catalogue details', () => {
   it('computes facets', async () => {
     const f = await seedCatalog.facets()
     expect(f.platformCounts).toEqual({ gb: 24, gbc: 15 })
+    expect(f.regionCounts).toEqual({ eu: 26, us: 39, jp: 38 }) // same as catalog_facets in Supabase
     expect(f.yearMin).toBe(1989)
     expect(f.yearMax).toBe(2002)
     expect(f.genres.find((g) => g.slug === 'rpg')?.count).toBe(8)

@@ -7,6 +7,7 @@
 import { writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { seedCompanies, seedGames, seedGenres, seedSeries } from '../src/data/seed/catalog.ts'
+import { DEMO_PRICE_DATE, demoPrices } from '../src/data/seed/prices.ts'
 
 const data = {
   companies: seedCompanies.map((c) => ({ slug: c.slug, name: c.name, country: c.country ?? null })),
@@ -35,6 +36,17 @@ const data = {
       year: r.year,
       publisher: r.publisher ?? g.publisher,
     })),
+  ),
+  prices: seedGames.flatMap((g) =>
+    g.releases.flatMap((r) => {
+      const p = demoPrices(g.slug, r.region)
+      return (['loose', 'cib', 'new'] as const).map((grade) => ({
+        game: g.slug,
+        region: r.region,
+        grade,
+        cents: p[grade],
+      }))
+    }),
   ),
 }
 
@@ -91,6 +103,14 @@ join public.games g on g.slug = x.game
 on conflict (game_id, region, coalesce(product_code, '')) do update set
   local_title = excluded.local_title, release_date = excluded.release_date,
   release_date_precision = excluded.release_date_precision, publisher_id = excluded.publisher_id;
+
+-- DEMO prices (source = seed): replaced wholesale on every run.
+delete from public.price_points where source = 'seed';
+insert into public.price_points (release_id, grade, value_cents, currency, source, observed_at)
+select r.id, x.grade::public.price_grade, x.cents, 'EUR', 'seed', '${DEMO_PRICE_DATE}'
+from _seed, jsonb_to_recordset(d->'prices') as x(game text, region text, grade text, cents int)
+join public.games g on g.slug = x.game
+join public.releases r on r.game_id = g.id and r.region = x.region::public.region and r.product_code is null;
 
 commit;
 `

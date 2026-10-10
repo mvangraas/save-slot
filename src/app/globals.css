@@ -94,6 +94,9 @@
   --accent-gbc-text: var(--color-gbc-soft);
   --focus: var(--color-sticker);
   --texture-dot: rgb(255 255 255 / 0.025);
+  /* chart series (validated with the dataviz palette checker against --surface) */
+  --chart-gb: #7d9c0c;
+  --chart-gbc: #a569bd;
   color-scheme: dark;
 }
 
@@ -108,6 +111,8 @@
   --accent-gbc-text: #6c3483;
   --focus: var(--color-lcd-900);
   --texture-dot: rgb(0 0 0 / 0.035);
+  --chart-gb: #5c7a0a;
+  --chart-gbc: #8e44ad;
   color-scheme: light;
 }
 
@@ -121,6 +126,8 @@
   --color-gb-text: var(--accent-gb-text);
   --color-gbc-text: var(--accent-gbc-text);
   --color-focus: var(--focus);
+  --color-chart-gb: var(--chart-gb);
+  --color-chart-gbc: var(--chart-gbc);
 }
 
 /* ------------------------------------------------------------------ */

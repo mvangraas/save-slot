@@ -8,6 +8,8 @@ import {
   type Facets,
   type GameDetail,
   type GameQuery,
+  type GameSummary,
+  type PriceIndex,
   type SearchResult,
 } from './types'
 
@@ -63,6 +65,7 @@ export function createSupabaseCatalog(db: SupabaseClient<Database>): CatalogProv
         year_min: number | null
         year_max: number | null
         platform_counts: Facets['platformCounts']
+        region_counts?: Facets['regionCounts']
       }
       return {
         genres: f.genres,
@@ -72,6 +75,7 @@ export function createSupabaseCatalog(db: SupabaseClient<Database>): CatalogProv
         yearMin: f.year_min,
         yearMax: f.year_max,
         platformCounts: f.platform_counts,
+        regionCounts: f.region_counts ?? { eu: 0, us: 0, jp: 0 },
       }
     },
 
@@ -154,6 +158,43 @@ export function createSupabaseCatalog(db: SupabaseClient<Database>): CatalogProv
       const { data, error } = await db.from('games').select('slug').order('slug').limit(5000)
       if (error) throw new Error(`listSlugs failed: ${error.message}`)
       return data.map((r) => r.slug)
+    },
+
+    async allGames() {
+      const all: GameSummary[] = []
+      for (let page = 1; page <= 100; page++) {
+        const r = await this.search({ filters: {}, sort: 'title', page, pageSize: 100 })
+        all.push(...r.items)
+        if (page >= r.pageCount) break
+      }
+      return all
+    },
+
+    async priceIndex() {
+      const { data, error } = await db
+        .from('price_points')
+        .select(
+          'release_id, grade, value_cents, source, observed_at, release:releases!inner ( game_id, region )',
+        )
+        .eq('currency', 'EUR')
+        .order('observed_at', { ascending: false })
+        .limit(20000)
+      if (error) throw new Error(`priceIndex failed: ${error.message}`)
+      const out: PriceIndex = {}
+      for (const p of data) {
+        const entry = (out[p.release_id] ??= {
+          gameId: p.release.game_id,
+          region: p.release.region,
+          loose: null,
+          cib: null,
+          new: null,
+          source: p.source,
+          observedAt: p.observed_at,
+        })
+        // rows are newest first: keep the first value we see per grade
+        if (entry[p.grade] === null) entry[p.grade] = p.value_cents
+      }
+      return out
     },
 
     async suggest(q: string, limit: number) {

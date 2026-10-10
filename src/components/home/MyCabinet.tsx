@@ -5,19 +5,23 @@ import { PixelButton } from '@/components/retro/PixelButton'
 import { PixelProgress } from '@/components/retro/PixelProgress'
 import { getUserContext } from '@/lib/backend'
 import { groupByGame, ownedPerPlatform } from '@/lib/backend/collection'
-import { getFacets } from '@/lib/catalog'
+import { collectionValue } from '@/lib/backend/value'
+import { getFacets, getPriceIndex } from '@/lib/catalog'
+import { formatEuro } from '@/lib/format'
 
 /** Signed-in part of the homepage. Renders nothing for visitors. Reads the session → <Suspense>. */
 export async function MyCabinet() {
   const ctx = await getUserContext()
   if (!ctx) return null
-  const [profile, items, plays, wishlist, facets] = await Promise.all([
+  const [profile, items, plays, wishlist, facets, prices] = await Promise.all([
     ctx.store.getProfile(),
     ctx.store.listCollection(),
     ctx.store.listPlayLogs(),
     ctx.store.wishlistCount(),
     getFacets(),
+    getPriceIndex(),
   ])
+  const value = collectionValue(items, prices)
   const owned = groupByGame(items)
   const per = ownedPerPlatform(owned)
   const playing = plays.filter((p) => p.status === 'playing')
@@ -43,7 +47,7 @@ export async function MyCabinet() {
         {(
           [
             ['Games owned', owned.length],
-            ['Copies', items.length],
+            ['Est. value', formatEuro(value.totalCents) ?? '€0'],
             ['Playing', playing.length],
             ['Wishlist', wishlist],
           ] as const
@@ -54,6 +58,15 @@ export async function MyCabinet() {
           </div>
         ))}
       </dl>
+
+      {value.demo ? (
+        <p className="-mt-3 text-xs text-fg-muted">
+          Value uses demo prices for now — not real market data.{' '}
+          <Link href="/stats" className="underline">
+            More stats →
+          </Link>
+        </p>
+      ) : null}
 
       <div className="grid gap-5 rounded-sm bg-surface p-5 sm:grid-cols-2">
         <PixelProgress label="Game Boy" value={per.gb} max={facets.platformCounts.gb} tone="gb" />

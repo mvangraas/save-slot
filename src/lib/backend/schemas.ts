@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { ITEM_CONDITIONS, PLAY_STATUSES } from './types'
+import { ITEM_CONDITIONS, PLAY_STATUSES, WISH_PRIORITIES } from './types'
 
 /** HTML checkbox: present ("on") = true, missing = false. */
 const checkbox = z
@@ -142,3 +142,27 @@ export type FormState = {
   message?: string
   errors?: Record<string, string>
 }
+
+export const wishlistSchema = z.object({
+  priority: z.enum(WISH_PRIORITIES),
+  preferredRegion: z
+    .enum(['eu', 'us', 'jp'])
+    .or(z.literal(''))
+    .optional()
+    .nullable()
+    .transform((v) => (v ? v : null)),
+  desiredCondition: z
+    .enum(ITEM_CONDITIONS)
+    .or(z.literal(''))
+    .optional()
+    .nullable()
+    .transform((v) => (v ? v : null)),
+  maxPrice: priceSchema,
+  notes: optionalText(2000),
+})
+
+export const BULK_OPS = ['remove', 'to-wishlist', 'playing', 'completed', 'backlog'] as const
+export const bulkSchema = z.object({
+  op: z.enum(BULK_OPS),
+  ids: z.array(z.string().min(1).max(80)).min(1, 'Select at least one copy.').max(500),
+})

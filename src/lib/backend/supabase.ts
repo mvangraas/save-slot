@@ -342,6 +342,49 @@ function storeFor(db: DB, user: SessionUser): UserStore {
         updatedAt: r.updated_at,
       }))
     },
+    async listWishlist() {
+      const { data, error } = await db
+        .from('wishlist_items')
+        .select(
+          `priority, preferred_region, desired_condition, max_price_cents, notes, created_at,
+           game:games!inner ( id, slug, title, platform, compat, first_release_year )`,
+        )
+        .eq('user_id', uid)
+        .order('created_at', { ascending: false })
+      if (error) throw new Error(`wishlist: ${error.message}`)
+      return data.map((w) => ({
+        gameId: w.game.id,
+        gameSlug: w.game.slug,
+        gameTitle: w.game.title,
+        platform: w.game.platform,
+        compat: w.game.compat,
+        firstReleaseYear: w.game.first_release_year,
+        priority: w.priority,
+        preferredRegion: w.preferred_region,
+        desiredCondition: w.desired_condition,
+        maxPriceCents: w.max_price_cents,
+        notes: w.notes,
+        createdAt: w.created_at,
+      }))
+    },
+    async updateWishlistItem(gameId, p) {
+      const { error, count } = await db
+        .from('wishlist_items')
+        .update(
+          {
+            priority: p.priority,
+            preferred_region: p.preferredRegion,
+            desired_condition: p.desiredCondition,
+            max_price_cents: p.maxPriceCents,
+            notes: p.notes,
+          },
+          { count: 'exact' },
+        )
+        .eq('user_id', uid)
+        .eq('game_id', gameId)
+      if (error) return fail(dbError(error))
+      return count === 0 ? fail('Not on your wishlist.') : ok(undefined)
+    },
     async wishlistCount() {
       const { count, error } = await db
         .from('wishlist_items')

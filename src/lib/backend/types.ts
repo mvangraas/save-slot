@@ -25,6 +25,32 @@ export const playStatusLabel: Record<PlayStatus, string> = {
   abandoned: 'Abandoned',
 }
 
+export const WISH_PRIORITIES = ['high', 'medium', 'low'] as const
+export type WishPriority = (typeof WISH_PRIORITIES)[number]
+export const priorityLabel: Record<WishPriority, string> = {
+  high: 'High',
+  medium: 'Medium',
+  low: 'Low',
+}
+
+export type WishlistPatch = {
+  priority: WishPriority
+  preferredRegion: Region | null
+  desiredCondition: ItemCondition | null
+  maxPriceCents: number | null
+  notes: string | null
+}
+
+export type WishlistEntry = WishlistPatch & {
+  gameId: string
+  gameSlug: string
+  gameTitle: string
+  platform: Platform
+  compat: CartCompat
+  firstReleaseYear: number | null
+  createdAt: string
+}
+
 export type Visibility = 'private' | 'unlisted' | 'public'
 
 export type Profile = {
@@ -108,6 +134,8 @@ export interface UserStore {
   setRating(gameId: string, patch: { score?: number | null; isFavorite?: boolean }): Promise<Result>
   setPlayStatus(gameId: string, status: PlayStatus | null): Promise<Result>
   setWishlisted(gameId: string, wishlisted: boolean): Promise<Result>
+  listWishlist(): Promise<WishlistEntry[]>
+  updateWishlistItem(gameId: string, patch: WishlistPatch): Promise<Result>
   addMemory(gameId: string, input: MemoryInput): Promise<Result>
   removeMemory(id: string): Promise<Result>
   listPlayLogs(): Promise<PlayEntry[]>

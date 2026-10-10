@@ -22,10 +22,23 @@ type Props = {
   returnTo: string
   submitLabel: string
   onDone?: () => void
+  /** Extra hidden fields, e.g. the gameId for "GOT IT!". */
+  hidden?: Record<string, string>
+  /** Prefill for a new copy. */
+  defaults?: { releaseId?: string; condition?: string | null; price?: string }
 }
 
 /** Add or edit one physical copy: which release, cart/box/manual, condition, price, date, notes. */
-export function ItemForm({ releases, action, item, returnTo, submitLabel, onDone }: Props) {
+export function ItemForm({
+  releases,
+  action,
+  item,
+  returnTo,
+  submitLabel,
+  onDone,
+  hidden,
+  defaults,
+}: Props) {
   const { state, pending, formProps } = useForm(action)
   const formRef = useRef<HTMLFormElement>(null)
 
@@ -35,19 +48,25 @@ export function ItemForm({ releases, action, item, returnTo, submitLabel, onDone
     onDone?.()
   }, [state, item, onDone])
 
-  const price = item?.purchasePriceCents != null ? (item.purchasePriceCents / 100).toFixed(2) : ''
+  const price =
+    item?.purchasePriceCents != null
+      ? (item.purchasePriceCents / 100).toFixed(2)
+      : (defaults?.price ?? '')
 
   return (
     <form ref={formRef} {...formProps} className="space-y-4" noValidate>
       <input type="hidden" name="returnTo" value={returnTo} />
       {item ? <input type="hidden" name="id" value={item.id} /> : null}
+      {Object.entries(hidden ?? {}).map(([k, v]) => (
+        <input key={k} type="hidden" name={k} value={v} />
+      ))}
 
       <Field label="Release" error={state.errors?.releaseId}>
         {(a11y) => (
           <select
             {...a11y}
             name="releaseId"
-            defaultValue={item?.releaseId ?? releases[0]?.id}
+            defaultValue={item?.releaseId ?? defaults?.releaseId ?? releases[0]?.id}
             className={inputCls}
           >
             {releases.map((r) => (
@@ -81,7 +100,7 @@ export function ItemForm({ releases, action, item, returnTo, submitLabel, onDone
             <select
               {...a11y}
               name="condition"
-              defaultValue={item?.condition ?? ''}
+              defaultValue={item?.condition ?? defaults?.condition ?? ''}
               className={inputCls}
             >
               <option value="">Not set</option>

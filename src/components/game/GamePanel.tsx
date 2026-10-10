@@ -168,7 +168,7 @@ export async function GameCollectionSections({ game }: { game: GameDetail }) {
 
   return (
     <>
-      <ManualSection number={4} title="Your copies" className="lg:col-span-2" id="your-copies">
+      <ManualSection number={5} title="Your copies" className="lg:col-span-2" id="your-copies">
         <div className="space-y-5 text-fg">
           {state.items.length > 0 ? (
             <ul className="space-y-3">
@@ -193,7 +193,7 @@ export async function GameCollectionSections({ game }: { game: GameDetail }) {
         </div>
       </ManualSection>
 
-      <ManualSection number={5} title="Memories" className="lg:col-span-2" id="memories">
+      <ManualSection number={6} title="Memories" className="lg:col-span-2" id="memories">
         <div className="space-y-5">
           {state.memories.length > 0 ? (
             <ul className="space-y-3">

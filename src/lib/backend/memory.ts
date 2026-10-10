@@ -16,6 +16,8 @@ import {
   type Profile,
   type SessionUser,
   type UserStore,
+  type WishlistEntry,
+  type WishlistPatch,
 } from './types'
 
 /**
@@ -35,7 +37,7 @@ type DB = {
   items: ItemRow[]
   ratings: Map<string, { score: number | null; isFavorite: boolean }> // `${user}:${game}`
   plays: Map<string, { status: PlayStatus; updatedAt: string }>
-  wishlist: Set<string>
+  wishlist: Map<string, WishlistPatch & { createdAt: string }>
   memories: (Memory & { userId: string })[]
 }
 
@@ -47,7 +49,7 @@ const db: DB = (g.__saveslotMemoryDb ??= {
   items: [],
   ratings: new Map(),
   plays: new Map(),
-  wishlist: new Set(),
+  wishlist: new Map(),
   memories: [],
 })
 
@@ -219,8 +221,18 @@ function storeFor(user: SessionUser): UserStore {
     },
     async setWishlisted(gameId, wishlisted) {
       if (!gameInfo(gameId)) return fail('Unknown game.')
-      if (wishlisted) db.wishlist.add(key(gameId))
-      else db.wishlist.delete(key(gameId))
+      if (wishlisted) {
+        if (!db.wishlist.has(key(gameId))) {
+          db.wishlist.set(key(gameId), {
+            priority: 'medium',
+            preferredRegion: null,
+            desiredCondition: null,
+            maxPriceCents: null,
+            notes: null,
+            createdAt: new Date().toISOString(),
+          })
+        }
+      } else db.wishlist.delete(key(gameId))
       return ok(undefined)
     },
     async addMemory(gameId, input) {
@@ -250,7 +262,22 @@ function storeFor(user: SessionUser): UserStore {
       return out.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
     },
     async wishlistCount() {
-      return [...db.wishlist].filter((k) => k.startsWith(`${user.id}:`)).length
+      return [...db.wishlist.keys()].filter((k) => k.startsWith(`${user.id}:`)).length
+    },
+    async listWishlist() {
+      const out: WishlistEntry[] = []
+      for (const [k, v] of db.wishlist) {
+        if (!k.startsWith(`${user.id}:`)) continue
+        const info = gameInfo(k.slice(user.id.length + 1))
+        if (info) out.push({ ...info, ...v })
+      }
+      return out.sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    },
+    async updateWishlistItem(gameId, patch) {
+      const current = db.wishlist.get(key(gameId))
+      if (!current) return fail('Not on your wishlist.')
+      db.wishlist.set(key(gameId), { ...current, ...patch })
+      return ok(undefined)
     },
   }
 }

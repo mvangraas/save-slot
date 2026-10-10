@@ -1,3 +1,4 @@
+import { DEMO_PRICE_DATE, demoPrices } from '@/data/seed/prices'
 import {
   seedCompanies,
   seedGames,
@@ -15,6 +16,7 @@ import type {
   GameFeature,
   GameQuery,
   GameSummary,
+  PriceIndex,
   SearchResult,
   Suggestion,
 } from './types'
@@ -143,6 +145,11 @@ export const seedCatalog: CatalogProvider = {
         gb: seedGames.filter((g) => g.compat === 'gb').length,
         gbc: seedGames.filter((g) => g.compat !== 'gb').length,
       },
+      regionCounts: {
+        eu: seedGames.filter((g) => g.releases.some((r) => r.region === 'eu')).length,
+        us: seedGames.filter((g) => g.releases.some((r) => r.region === 'us')).length,
+        jp: seedGames.filter((g) => g.releases.some((r) => r.region === 'jp')).length,
+      },
     }
   },
 
@@ -185,6 +192,26 @@ export const seedCatalog: CatalogProvider = {
 
   async listSlugs() {
     return seedGames.map((g) => g.slug)
+  },
+
+  async allGames() {
+    return [...seedGames].sort(order).map(toSummary)
+  },
+
+  async priceIndex(): Promise<PriceIndex> {
+    const out: PriceIndex = {}
+    for (const g of seedGames) {
+      for (const r of g.releases) {
+        out[`seed:${g.slug}:${r.region}`] = {
+          gameId: `seed:${g.slug}`,
+          region: r.region,
+          ...demoPrices(g.slug, r.region),
+          source: 'seed',
+          observedAt: DEMO_PRICE_DATE,
+        }
+      }
+    }
+    return out
   },
 
   async suggest(q: string, limit: number): Promise<Suggestion[]> {

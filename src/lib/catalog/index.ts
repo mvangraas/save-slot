@@ -48,3 +48,17 @@ export async function suggestGames(q: string) {
   cacheTag('catalog')
   return getCatalog().suggest(q, 6)
 }
+
+export async function getAllGames() {
+  'use cache'
+  cacheLife('hours')
+  cacheTag('catalog')
+  return getCatalog().allGames()
+}
+
+export async function getPriceIndex() {
+  'use cache'
+  cacheLife('hours')
+  cacheTag('catalog', 'prices')
+  return getCatalog().priceIndex()
+}

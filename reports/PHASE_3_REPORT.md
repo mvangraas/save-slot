@@ -5,6 +5,7 @@
 ## Wat er gebouwd is
 
 **Inloggen**
+
 - `/login` heeft drie tabs:
   - **Sign in**: e-mail en wachtwoord
   - **New save file**: account aanmaken, minimaal 8 tekens
@@ -16,12 +17,14 @@
 **`/settings`:** gebruikersnaam (uniek), weergavenaam, voorkeursregio, wie je collectie mag zien (alleen ik / met link / openbaar) en uitloggen.
 
 **Gamepagina (alleen als je ingelogd bent)**
+
 - **Snelknoppen:** ♡ Wishlist, ☆ Favorite, Rating (1–10) en Play-status (Backlog / Playing / Completed / Abandoned). Je wijziging wordt meteen opgeslagen.
 - **04 Your copies:** per exemplaar leg je vast welke release (regio), cartridge / doos / handleiding, conditie, aankoopprijs, datum en notities. Je kunt exemplaren bewerken en verwijderen.
 - **05 Memories:** herinneringen met een jaartal. Ze zijn standaard privé, met een vinkje maak je ze openbaar. Je kunt ze ook verwijderen.
 - Uitgelogd zie je "Sign in to collect".
 
 **`/collection`**
+
 - Tabs: All, GB, GBC, Playing en Completed.
 - Weergaven:
   - **Shelf:** de cartridgekast, per platform op planken
@@ -32,6 +35,7 @@
 - Als je nog niets hebt, zie je `NO DATA ON THIS SAVE FILE`.
 
 **Homepage (ingelogd)**
+
 - "WELCOME BACK, …"
 - Tegels met het aantal games, exemplaren, games die je speelt en je wishlist.
 - Completion-balken, je cartridgekast (de laatste 16) en "Continue playing".
@@ -43,22 +47,22 @@
 
 Ik heb dezelfde aanpak gebruikt als bij de catalogus: een `Backend`-interface (`src/lib/backend`) met drie implementaties.
 
-| Modus | Wanneer |
-|---|---|
-| **Supabase** | Als de Supabase-variabelen zijn ingesteld (productie). Alles per gebruiker gaat via RLS. |
-| **Memory** | Alleen als `SAVESLOT_MEMORY_BACKEND=1` en Supabase níét is ingesteld (lokaal en e2e). Werkt nooit op Vercel-productie. |
-| **None** | Geen van beide: je kunt de site bekijken, en de loginpagina zegt "Sign-in not connected". |
+| Modus        | Wanneer                                                                                                                |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| **Supabase** | Als de Supabase-variabelen zijn ingesteld (productie). Alles per gebruiker gaat via RLS.                               |
+| **Memory**   | Alleen als `SAVESLOT_MEMORY_BACKEND=1` en Supabase níét is ingesteld (lokaal en e2e). Werkt nooit op Vercel-productie. |
+| **None**     | Geen van beide: je kunt de site bekijken, en de loginpagina zegt "Sign-in not connected".                              |
 
 - Alle wijzigingen gaan via Server Actions met Zod-validatie. Die controleren telkens of je bent ingelogd en vragen daarna verse data op.
 - De gebruikersdata wordt nooit gecachet. Op de gamepagina's staat het gebruikersdeel binnen een `<Suspense>`, zodat de catalogusinformatie statisch blijft.
 
 ## Tests
 
-| Soort | Resultaat |
-|---|---|
-| Unit en component (Vitest) | **110 groen** (was 86) |
-| E2E (Playwright, desktop en mobiel) | **60 groen** (was 42) |
-| Lint, typecheck, Prettier, build | groen |
+| Soort                               | Resultaat              |
+| ----------------------------------- | ---------------------- |
+| Unit en component (Vitest)          | **110 groen** (was 86) |
+| E2E (Playwright, desktop en mobiel) | **60 groen** (was 42)  |
+| Lint, typecheck, Prettier, build    | groen                  |
 
 - **Nieuwe unit-tests:**
   - formulier-validatie: prijs "€ 12,50" wordt 1250 cent, datum, conditie, minimaal één van cart/doos/handleiding
