@@ -14,7 +14,7 @@ export function DesktopNavList({ items, pathname }: { items: NavItem[]; pathname
       {items.map((item) => {
         const active = isActive(item.href, pathname)
         return (
-          <li key={item.href}>
+          <li key={item.href} className={item.xlOnly ? 'hidden xl:block' : undefined}>
             <Link
               href={item.href}
               aria-current={active ? 'page' : undefined}

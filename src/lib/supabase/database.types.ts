@@ -774,6 +774,7 @@ export type Database = {
     Functions: {
       catalog_facets: { Args: never; Returns: Json }
       f_like_escape: { Args: { '': string }; Returns: string }
+      fn_evaluate_achievements: { Args: never; Returns: string[] }
       f_search_norm: { Args: { '': string }; Returns: string }
       f_unaccent: { Args: { '': string }; Returns: string }
       refresh_game_derived: { Args: { p_game_id: string }; Returns: undefined }

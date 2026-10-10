@@ -1,4 +1,6 @@
 import Link from 'next/link'
+import { AchievementSticker } from '@/components/achievements/AchievementSticker'
+import { achievementByCode } from '@/lib/achievements/definitions'
 import { CartridgeShelf } from '@/components/retro/CartridgeShelf'
 import { EmptyState } from '@/components/retro/EmptyState'
 import { PixelButton } from '@/components/retro/PixelButton'
@@ -21,6 +23,10 @@ export async function MyCabinet() {
     getFacets(),
     getPriceIndex(),
   ])
+  const recent = (await ctx.store.listAchievements()).slice(0, 4).flatMap((u) => {
+    const a = achievementByCode(u.code)
+    return a ? [{ a, at: u.unlockedAt }] : []
+  })
   const value = collectionValue(items, prices)
   const owned = groupByGame(items)
   const per = ownedPerPlatform(owned)
@@ -119,6 +125,31 @@ export async function MyCabinet() {
           />
         </div>
       ) : null}
+
+      <div className="space-y-3">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <h3 className="font-display text-sm uppercase">Recent achievements</h3>
+          <Link
+            href="/achievements"
+            className="font-display text-xs text-fg-muted uppercase hover:text-fg"
+          >
+            Sticker sheet →
+          </Link>
+        </div>
+        {recent.length > 0 ? (
+          <ul className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {recent.map(({ a, at }) => (
+              <li key={a.code}>
+                <AchievementSticker achievement={a} unlockedAt={at} size="sm" />
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-sm text-fg-muted">
+            No stickers yet. Add a cartridge to unlock your first one.
+          </p>
+        )}
+      </div>
     </section>
   )
 }

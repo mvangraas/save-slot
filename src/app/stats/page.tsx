@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import {
@@ -24,7 +25,15 @@ export const metadata: Metadata = { title: 'Stats', robots: { index: false } }
 export default function StatsPage() {
   return (
     <div className="space-y-8">
-      <h1 className="font-pixel text-lg leading-relaxed sm:text-xl">COLLECTION STATS</h1>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <h1 className="font-pixel text-lg leading-relaxed sm:text-xl">COLLECTION STATS</h1>
+        <Link
+          href="/achievements"
+          className="inline-flex min-h-11 items-center font-display text-xs text-fg-muted uppercase hover:text-fg"
+        >
+          Achievements →
+        </Link>
+      </div>
       <Suspense fallback={<LoadingState label="Crunching numbers" />}>
         <StatsBody />
       </Suspense>

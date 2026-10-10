@@ -1,6 +1,6 @@
 'use server'
 
-import { refresh } from 'next/cache'
+import { saveProgress } from '@/lib/achievements/server'
 import { requireUser } from '@/lib/backend'
 import {
   collectionItemSchema,
@@ -25,7 +25,7 @@ export async function updateWishlistAction(_prev: FormState, form: FormData): Pr
   const { maxPrice, ...rest } = parsed.data
   const res = await store.updateWishlistItem(gameId.data, { ...rest, maxPriceCents: maxPrice })
   if (!res.ok) return { message: res.error }
-  refresh()
+  await saveProgress(store)
   return { ok: true, message: 'PROGRESS SAVED' }
 }
 
@@ -34,7 +34,7 @@ export async function removeFromWishlistAction(form: FormData): Promise<void> {
   const gameId = idSchema.safeParse(form.get('gameId'))
   if (!gameId.success) return
   await store.setWishlisted(gameId.data, false)
-  refresh()
+  await saveProgress(store)
 }
 
 /** "GOT IT!": add the copy to the collection, then take the game off the wishlist. */
@@ -56,6 +56,6 @@ export async function gotItAction(_prev: FormState, form: FormData): Promise<For
   const added = await store.addItem(parsed.data)
   if (!added.ok) return { message: added.error }
   await store.setWishlisted(gameId.data, false)
-  refresh()
+  await saveProgress(store)
   return { ok: true, message: 'WISH GRANTED' }
 }

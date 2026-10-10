@@ -393,6 +393,20 @@ function storeFor(db: DB, user: SessionUser): UserStore {
       if (error) throw new Error(`wishlist: ${error.message}`)
       return count ?? 0
     },
+    async listAchievements() {
+      const { data, error } = await db
+        .from('user_achievements')
+        .select('achievement_code, unlocked_at')
+        .eq('user_id', uid)
+        .order('unlocked_at', { ascending: false })
+      if (error) throw new Error(`achievements: ${error.message}`)
+      return data.map((r) => ({ code: r.achievement_code, unlockedAt: r.unlocked_at }))
+    },
+    async evaluateAchievements() {
+      const { data, error } = await db.rpc('fn_evaluate_achievements')
+      if (error) throw new Error(`achievements: ${error.message}`)
+      return data ?? []
+    },
   }
 }
 

@@ -2,6 +2,8 @@ import 'server-only'
 import { createHash, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto'
 import { cookies } from 'next/headers'
 import { seedGames } from '@/data/seed/catalog'
+import { ACHIEVEMENTS } from '@/lib/achievements/definitions'
+import { evaluateAchievements, type CatalogGame } from '@/lib/achievements/evaluate'
 import type { Region } from '@/lib/types'
 import {
   fail,
@@ -39,6 +41,8 @@ type DB = {
   plays: Map<string, { status: PlayStatus; updatedAt: string }>
   wishlist: Map<string, WishlistPatch & { createdAt: string }>
   memories: (Memory & { userId: string })[]
+  achievements: Map<string, Map<string, string>> // userId → code → unlockedAt
+  wishGranted: Set<string> // userIds
 }
 
 const g = globalThis as unknown as { __saveslotMemoryDb?: DB }
@@ -51,7 +55,11 @@ const db: DB = (g.__saveslotMemoryDb ??= {
   plays: new Map(),
   wishlist: new Map(),
   memories: [],
+  achievements: new Map(),
+  wishGranted: new Set(),
 })
+db.achievements ??= new Map()
+db.wishGranted ??= new Set()
 
 // ---- catalogue lookups (seed ids: game `seed:<slug>`, release `seed:<slug>:<region>`)
 const gamesById = new Map(seedGames.map((game) => [`seed:${game.slug}`, game]))
@@ -74,6 +82,18 @@ const gameInfo = (gameId: string) => {
     firstReleaseYear: Math.min(...game.releases.map((r) => r.year)),
   }
 }
+
+const seedCatalogFacts: CatalogGame[] = seedGames.map((game) => ({
+  id: `seed:${game.slug}`,
+  platform: game.compat === 'gb' ? 'gb' : 'gbc',
+  compat: game.compat,
+  firstReleaseYear: Math.min(...game.releases.map((r) => r.year)),
+  genres: game.genres,
+  series: game.series ?? null,
+  sgbEnhanced: game.features?.sgbEnhanced === true,
+  rumble: game.features?.rumble === true,
+  releases: game.releases.map((r) => ({ region: r.region, year: r.year })),
+}))
 
 function hydrate(row: ItemRow): CollectionItem | null {
   const rel = release(row.releaseId)
@@ -232,7 +252,11 @@ function storeFor(user: SessionUser): UserStore {
             createdAt: new Date().toISOString(),
           })
         }
-      } else db.wishlist.delete(key(gameId))
+      } else if (db.wishlist.delete(key(gameId))) {
+        // Mirrors the Supabase trigger: removing a wish you now own means it was granted.
+        const owns = mine().some((i) => i.releaseId.startsWith(`seed:${gameId.slice(5)}:`))
+        if (owns) db.wishGranted.add(user.id)
+      }
       return ok(undefined)
     },
     async addMemory(gameId, input) {
@@ -273,6 +297,39 @@ function storeFor(user: SessionUser): UserStore {
       }
       return out.sort((a, b) => b.createdAt.localeCompare(a.createdAt))
     },
+    async listAchievements() {
+      const mineA = db.achievements.get(user.id) ?? new Map<string, string>()
+      return [...mineA.entries()]
+        .map(([code, unlockedAt]) => ({ code, unlockedAt }))
+        .sort((a, b) => b.unlockedAt.localeCompare(a.unlockedAt) || a.code.localeCompare(b.code))
+    },
+    async evaluateAchievements() {
+      const prefix = `${user.id}:`
+      const ratings = [...db.ratings.entries()].filter(([k]) => k.startsWith(prefix))
+      const earned = evaluateAchievements({
+        copies: mine().flatMap((i) => {
+          const rel = release(i.releaseId)
+          return rel ? [{ ...i, gameId: `seed:${rel.game.slug}`, region: rel.region }] : []
+        }),
+        catalog: seedCatalogFacts,
+        playStatuses: [...db.plays.entries()]
+          .filter(([k]) => k.startsWith(prefix))
+          .map(([, v]) => v.status),
+        memoryCount: db.memories.filter((m) => m.userId === user.id).length,
+        ratedCount: ratings.filter(([, r]) => r.score !== null).length,
+        favoriteCount: ratings.filter(([, r]) => r.isFavorite).length,
+        wishlistCount: [...db.wishlist.keys()].filter((k) => k.startsWith(prefix)).length,
+        wishGranted: db.wishGranted.has(user.id),
+      })
+      const mineA = db.achievements.get(user.id) ?? new Map<string, string>()
+      db.achievements.set(user.id, mineA)
+      const now = new Date().toISOString()
+      const fresh = ACHIEVEMENTS.map((a) => a.code).filter(
+        (code) => earned.has(code) && !mineA.has(code),
+      )
+      for (const code of fresh) mineA.set(code, now)
+      return fresh
+    },
     async updateWishlistItem(gameId, patch) {
       const current = db.wishlist.get(key(gameId))
       if (!current) return fail('Not on your wishlist.')
@@ -298,4 +355,6 @@ export function resetMemoryBackend() {
   db.plays.clear()
   db.wishlist.clear()
   db.memories = []
+  db.achievements.clear()
+  db.wishGranted.clear()
 }

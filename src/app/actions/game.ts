@@ -1,6 +1,6 @@
 'use server'
 
-import { refresh } from 'next/cache'
+import { saveProgress } from '@/lib/achievements/server'
 import { requireUser } from '@/lib/backend'
 import {
   fieldErrors,
@@ -20,7 +20,7 @@ export async function setScoreAction(form: FormData): Promise<void> {
   const parsed = scoreSchema.safeParse(raw === '' || raw === null ? null : raw)
   if (!gameId.success || !parsed.success) return
   await store.setRating(gameId.data, { score: parsed.data })
-  refresh()
+  await saveProgress(store)
 }
 
 export async function setFavoriteAction(form: FormData): Promise<void> {
@@ -28,7 +28,7 @@ export async function setFavoriteAction(form: FormData): Promise<void> {
   const gameId = idSchema.safeParse(form.get('gameId'))
   if (!gameId.success) return
   await store.setRating(gameId.data, { isFavorite: form.get('isFavorite') === 'true' })
-  refresh()
+  await saveProgress(store)
 }
 
 export async function setPlayStatusAction(form: FormData): Promise<void> {
@@ -37,7 +37,7 @@ export async function setPlayStatusAction(form: FormData): Promise<void> {
   const status = playStatusSchema.safeParse(form.get('status') ?? '')
   if (!gameId.success || !status.success) return
   await store.setPlayStatus(gameId.data, status.data)
-  refresh()
+  await saveProgress(store)
 }
 
 export async function toggleWishlistAction(form: FormData): Promise<void> {
@@ -45,7 +45,7 @@ export async function toggleWishlistAction(form: FormData): Promise<void> {
   const gameId = idSchema.safeParse(form.get('gameId'))
   if (!gameId.success) return
   await store.setWishlisted(gameId.data, form.get('wishlisted') === 'true')
-  refresh()
+  await saveProgress(store)
 }
 
 export async function addMemoryAction(_prev: FormState, form: FormData): Promise<FormState> {
@@ -60,7 +60,7 @@ export async function addMemoryAction(_prev: FormState, form: FormData): Promise
   if (!parsed.success) return { errors: fieldErrors(parsed.error) }
   const res = await store.addMemory(gameId.data, parsed.data)
   if (!res.ok) return { message: res.error }
-  refresh()
+  await saveProgress(store)
   return { ok: true, message: 'MEMORY SAVED' }
 }
 
@@ -69,5 +69,5 @@ export async function removeMemoryAction(form: FormData): Promise<void> {
   const id = idSchema.safeParse(form.get('id'))
   if (!id.success) return
   await store.removeMemory(id.data)
-  refresh()
+  await saveProgress(store)
 }

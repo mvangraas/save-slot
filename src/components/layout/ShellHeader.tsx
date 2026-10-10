@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { Suspense } from 'react'
-import { platformNav, primaryNav } from '@/config/site'
+import { desktopNav, platformNav } from '@/config/site'
 import { ActiveDesktopNav } from './ActiveNav'
 import { Logo } from './Logo'
 import { DesktopNavList } from './NavList'
@@ -13,8 +13,8 @@ export function ShellHeader() {
       <div className="mx-auto flex h-16 max-w-6xl items-center gap-4 px-4">
         <Logo />
         <nav aria-label="Main" className="ml-4 hidden lg:block">
-          <Suspense fallback={<DesktopNavList items={primaryNav} pathname={null} />}>
-            <ActiveDesktopNav items={primaryNav} />
+          <Suspense fallback={<DesktopNavList items={desktopNav} pathname={null} />}>
+            <ActiveDesktopNav items={desktopNav} />
           </Suspense>
         </nav>
         <div className="ml-auto flex items-center gap-2">

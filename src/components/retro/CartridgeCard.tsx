@@ -39,12 +39,22 @@ const label: Record<CartCompat, string> = {
 }
 
 const widths = { sm: 'w-32', md: 'w-44', lg: 'w-56', fluid: 'w-full' } as const
+/** Upper bound for the label font; the real size also shrinks so the longest word fits. */
 const titleSize = {
-  sm: 'text-[0.5rem]',
-  md: 'text-[0.625rem]',
-  lg: 'text-xs',
-  fluid: 'text-[0.5rem] sm:text-[0.5625rem] lg:text-[0.625rem]',
+  sm: '[--title-max:0.5rem]',
+  md: '[--title-max:0.625rem]',
+  lg: '[--title-max:0.75rem]',
+  fluid: '[--title-max:0.5rem] sm:[--title-max:0.5625rem] lg:[--title-max:0.625rem]',
 } as const
+
+/**
+ * Press Start 2P is monospaced at ~1em per glyph, so a word of n letters needs ~n em.
+ * Shrinking to fit the longest word (down to 7px) avoids breaks like "Shanta/e".
+ */
+export function labelFontSize(title: string): string {
+  const longest = Math.max(1, ...title.split(/\s+/).map((w) => [...w].length))
+  return `min(var(--title-max), max(0.4375rem, calc(100cqi / ${longest + 0.5})))`
+}
 
 /**
  * A game shown as a cartridge: one cut corner, grip grooves on top and a label
@@ -80,7 +90,7 @@ export function CartridgeCard({
       {/* label */}
       <div
         className={cn(
-          'relative flex flex-1 flex-col justify-between rounded-[3px] p-[8%] shadow-[inset_0_0_0_2px_rgb(0_0_0/0.15)]',
+          '@container relative flex flex-1 flex-col justify-between rounded-[3px] p-[8%] shadow-[inset_0_0_0_2px_rgb(0_0_0/0.15)]',
           label[compat],
         )}
       >
@@ -88,7 +98,10 @@ export function CartridgeCard({
           <PlatformBadge platform={platform} />
           {year ? <span className="font-display text-[0.6875rem] leading-none">{year}</span> : null}
         </div>
-        <p className={cn('line-clamp-4 font-pixel leading-relaxed break-words', titleSize[size])}>
+        <p
+          className={cn('line-clamp-4 font-pixel leading-relaxed break-words', titleSize[size])}
+          style={{ fontSize: labelFontSize(title) }}
+        >
           {title}
         </p>
         {regions.length > 0 ? (

@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { site } from '@/config/site'
 import { EffectsToggle } from './EffectsToggle'
+import { SoundToggle } from './SoundToggle'
 
 export function Footer() {
   return (
@@ -12,6 +13,7 @@ export function Footer() {
         </div>
         <div className="flex flex-col items-start gap-1 sm:items-end">
           <EffectsToggle />
+          <SoundToggle />
           <Link href="/about" className="inline-flex min-h-11 items-center hover:text-fg">
             About &amp; sources
           </Link>

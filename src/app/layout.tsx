@@ -46,6 +46,7 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
       lang="en"
       data-theme="dark"
       data-effects="full"
+      data-sound="off"
       suppressHydrationWarning
       className={`${pressStart.variable} ${silkscreen.variable} ${plexSans.variable} ${plexMono.variable} h-full antialiased`}
     >

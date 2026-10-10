@@ -1,3 +1,4 @@
+import type { UnlockedAchievement } from '@/lib/achievements/definitions'
 import type { CartCompat, Platform, Region } from '@/lib/types'
 
 export type Result<T = void> = { ok: true; data: T } | { ok: false; error: string }
@@ -140,6 +141,10 @@ export interface UserStore {
   removeMemory(id: string): Promise<Result>
   listPlayLogs(): Promise<PlayEntry[]>
   wishlistCount(): Promise<number>
+  /** Unlocked achievements, newest first. */
+  listAchievements(): Promise<UnlockedAchievement[]>
+  /** Server-side evaluation: stores new unlocks and returns their codes. */
+  evaluateAchievements(): Promise<string[]>
 }
 
 export type SignUpResult = { needsConfirmation: boolean }

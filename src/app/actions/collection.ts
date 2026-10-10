@@ -1,6 +1,6 @@
 'use server'
 
-import { refresh } from 'next/cache'
+import { saveProgress } from '@/lib/achievements/server'
 import { requireUser } from '@/lib/backend'
 import {
   bulkSchema,
@@ -32,7 +32,7 @@ export async function addCollectionItemAction(
   if (!parsed.success) return { errors: fieldErrors(parsed.error) }
   const res = await store.addItem(parsed.data)
   if (!res.ok) return { message: res.error }
-  refresh()
+  await saveProgress(store)
   return { ok: true, message: 'PROGRESS SAVED' }
 }
 
@@ -47,7 +47,7 @@ export async function updateCollectionItemAction(
   if (!parsed.success) return { errors: fieldErrors(parsed.error) }
   const res = await store.updateItem(id.data, parsed.data)
   if (!res.ok) return { message: res.error }
-  refresh()
+  await saveProgress(store)
   return { ok: true, message: 'PROGRESS SAVED' }
 }
 
@@ -56,7 +56,7 @@ export async function removeCollectionItemAction(form: FormData): Promise<void> 
   const id = idSchema.safeParse(form.get('id'))
   if (!id.success) return
   await store.removeItem(id.data)
-  refresh()
+  await saveProgress(store)
 }
 
 /** Bulk actions on selected copies in the collection table. */
@@ -77,7 +77,7 @@ export async function bulkCollectionAction(_prev: FormState, form: FormData): Pr
   } else {
     for (const g of games) await store.setPlayStatus(g, op)
   }
-  refresh()
+  await saveProgress(store)
   const n = selected.length
   const what =
     op === 'remove'

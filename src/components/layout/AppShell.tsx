@@ -1,7 +1,9 @@
-import type { ReactNode } from 'react'
+import { Suspense, type ReactNode } from 'react'
+import { UnlockToasts } from '@/components/achievements/UnlockToasts'
 import { BottomNav } from './BottomNav'
 import { Footer } from './Footer'
 import { ShellHeader } from './ShellHeader'
+import { SoundFx } from './SoundFx'
 
 export function AppShell({ children }: { children: ReactNode }) {
   return (
@@ -18,6 +20,10 @@ export function AppShell({ children }: { children: ReactNode }) {
       </main>
       <Footer />
       <BottomNav />
+      <Suspense fallback={null}>
+        <UnlockToasts />
+      </Suspense>
+      <SoundFx />
     </>
   )
 }
