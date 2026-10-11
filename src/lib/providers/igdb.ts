@@ -92,7 +92,7 @@ export function igdbToImportGame(g: IgdbGame): ImportGame | null {
     releases,
     cover: g.cover?.image_id
       ? {
-          kind: 'box_front',
+          kind: 'boxart_front',
           url: `https://images.igdb.com/igdb/image/upload/t_cover_big/${g.cover.image_id}.jpg`,
           width: g.cover.width ?? null,
           height: g.cover.height ?? null,

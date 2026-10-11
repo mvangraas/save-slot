@@ -18,8 +18,8 @@ describe('isActive', () => {
 
 describe('BottomNavList', () => {
   it('renders the five primary items and marks the current page', () => {
-    render(<BottomNavList items={primaryNav} pathname="/wishlist" />)
+    render(<BottomNavList items={primaryNav} pathname="/shop/cart" />)
     expect(screen.getAllByRole('link')).toHaveLength(5)
-    expect(screen.getByRole('link', { name: 'Wish' })).toHaveAttribute('aria-current', 'page')
+    expect(screen.getByRole('link', { name: 'Shop' })).toHaveAttribute('aria-current', 'page')
   })
 })

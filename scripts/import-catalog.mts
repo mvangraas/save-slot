@@ -74,7 +74,7 @@ const existing: ExistingGame[] = games.map((g) => ({
   slug: g.slug,
   igdbId: g.igdb_id === null ? null : String(g.igdb_id),
   hasDescription: !!g.description,
-  hasCover: g.media.some((m) => m.kind === 'box_front'),
+  hasCover: g.media.some((m) => m.kind === 'boxart_front'),
   regions: g.releases.map((r) => r.region as ExistingGame['regions'][number]),
 }))
 

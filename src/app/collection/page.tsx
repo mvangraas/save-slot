@@ -16,6 +16,7 @@ import { itemValue } from '@/lib/backend/value'
 import { CopiesTable } from '@/components/collection/CopiesTable'
 import type { GameSummary } from '@/lib/catalog/types'
 import { cn } from '@/lib/cn'
+import { myNav } from '@/config/site'
 
 export const metadata: Metadata = { title: 'My collection', robots: { index: false } }
 
@@ -37,7 +38,20 @@ type View = (typeof VIEWS)[number][0]
 export default function CollectionPage({ searchParams }: PageProps<'/collection'>) {
   return (
     <div className="space-y-8">
-      <h1 className="font-pixel text-lg leading-relaxed sm:text-xl">MY COLLECTION</h1>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <h1 className="font-pixel text-lg leading-relaxed sm:text-xl">MY COLLECTION</h1>
+        <nav aria-label="My pages" className="flex flex-wrap gap-x-4 lg:hidden">
+          {myNav.slice(1).map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="inline-flex min-h-11 items-center font-display text-xs text-fg-muted uppercase hover:text-fg"
+            >
+              {item.label} →
+            </Link>
+          ))}
+        </nav>
+      </div>
       <Suspense fallback={<LoadingState label="Loading save file" />}>
         <CollectionBody searchParams={searchParams} />
       </Suspense>

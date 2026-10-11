@@ -5,8 +5,9 @@ import { useFormStatus } from 'react-dom'
 import { PixelButton } from '@/components/retro/PixelButton'
 import { cn } from '@/lib/cn'
 
-export const inputCls =
-  'min-h-11 w-full rounded-none border-2 border-line bg-surface px-3 text-base text-fg placeholder:text-fg-muted aria-[invalid=true]:border-power'
+import { inputCls } from './fieldStyles'
+
+export { inputCls }
 
 export function Field({
   label,

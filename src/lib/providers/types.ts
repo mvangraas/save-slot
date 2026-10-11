@@ -24,7 +24,7 @@ export type ImportGame = {
 }
 
 export type MediaAsset = {
-  kind: 'box_front' | 'screenshot'
+  kind: 'boxart_front' | 'screenshot'
   url: string
   width: number | null
   height: number | null

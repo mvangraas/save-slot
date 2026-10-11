@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { Suspense } from 'react'
 import { desktopNav, platformNav } from '@/config/site'
+import { CartButton } from '@/components/shop/CartButton'
 import { ActiveDesktopNav } from './ActiveNav'
 import { Logo } from './Logo'
 import { DesktopNavList } from './NavList'
@@ -18,7 +19,7 @@ export function ShellHeader() {
           </Suspense>
         </nav>
         <div className="ml-auto flex items-center gap-2">
-          <nav aria-label="Platforms" className="hidden sm:block">
+          <nav aria-label="Platforms" className="hidden sm:block lg:hidden xl:block">
             <ul className="flex gap-1">
               {platformNav.map((p) => (
                 <li key={p.href}>
@@ -37,6 +38,7 @@ export function ShellHeader() {
             </ul>
           </nav>
           <ThemeToggle />
+          <CartButton />
           <Suspense fallback={<UserSlotFallback />}>
             <UserSlot />
           </Suspense>

@@ -5,11 +5,14 @@ import { FormMessage } from '@/components/forms/Field'
 import { useForm } from '@/components/forms/useForm'
 import { PixelButton } from '@/components/retro/PixelButton'
 import { MAX_PHOTOS } from '@/lib/backend/limits'
+import { formDataWithShrunkImages } from '@/lib/photos/shrink'
 import type { CollectionItem } from '@/lib/backend/types'
 
 /** Your own photos of one copy: private, max 4, location data stripped on upload. */
 export function ItemPhotos({ item, returnTo }: { item: CollectionItem; returnTo: string }) {
-  const { state, pending, formProps } = useForm(uploadPhotoAction)
+  const { state, pending, formProps } = useForm(uploadPhotoAction, {
+    prepare: (form) => formDataWithShrunkImages(form, 'photo'),
+  })
   const label = `${item.gameTitle} (${item.region.toUpperCase()})`
   return (
     <div className="space-y-2">

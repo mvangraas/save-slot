@@ -2,12 +2,12 @@ import { z } from 'zod'
 import { ITEM_CONDITIONS, PLAY_STATUSES, WISH_PRIORITIES } from './types'
 
 /** HTML checkbox: present ("on") = true, missing = false. */
-const checkbox = z
+export const checkbox = z
   .unknown()
   .optional()
   .transform((v) => v === true || v === 'on' || v === 'true' || v === '1')
 
-const optionalText = (max: number) =>
+export const optionalText = (max: number) =>
   z
     .string()
     .trim()

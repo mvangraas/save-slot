@@ -703,6 +703,476 @@ export type Database = {
           },
         ]
       }
+      product_categories: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          slug: string
+          sort: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          slug: string
+          sort?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          slug?: string
+          sort?: number
+        }
+        Relationships: []
+      }
+      products: {
+        Row: {
+          active: boolean
+          category_id: string | null
+          condition: Database['public']['Enums']['product_condition']
+          created_at: string
+          currency: string
+          description: string
+          id: string
+          name: string
+          price_cents: number
+          search_text: string | null
+          slug: string
+          specs: Json
+          stock: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          category_id?: string | null
+          condition?: Database['public']['Enums']['product_condition']
+          created_at?: string
+          currency?: string
+          description?: string
+          id?: string
+          name: string
+          price_cents: number
+          search_text?: string | null
+          slug: string
+          specs?: Json
+          stock?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          category_id?: string | null
+          condition?: Database['public']['Enums']['product_condition']
+          created_at?: string
+          currency?: string
+          description?: string
+          id?: string
+          name?: string
+          price_cents?: number
+          search_text?: string | null
+          slug?: string
+          specs?: Json
+          stock?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'products_category_id_fkey'
+            columns: ['category_id']
+            isOneToOne: false
+            referencedRelation: 'product_categories'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      product_images: {
+        Row: {
+          alt: string | null
+          created_at: string
+          id: string
+          path: string
+          product_id: string
+          sort: number
+        }
+        Insert: {
+          alt?: string | null
+          created_at?: string
+          id?: string
+          path: string
+          product_id: string
+          sort?: number
+        }
+        Update: {
+          alt?: string | null
+          created_at?: string
+          id?: string
+          path?: string
+          product_id?: string
+          sort?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'product_images_product_id_fkey'
+            columns: ['product_id']
+            isOneToOne: false
+            referencedRelation: 'products'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          address: Json
+          created_at: string
+          currency: string
+          email: string
+          id: string
+          mollie_payment_id: string | null
+          name: string
+          needs_attention: string | null
+          number: string
+          paid_at: string | null
+          phone: string | null
+          shipping_cents: number
+          status: Database['public']['Enums']['order_status']
+          subtotal_cents: number
+          token_hash: string
+          total_cents: number
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          address: Json
+          created_at?: string
+          currency?: string
+          email: string
+          id?: string
+          mollie_payment_id?: string | null
+          name: string
+          needs_attention?: string | null
+          number: string
+          paid_at?: string | null
+          phone?: string | null
+          shipping_cents: number
+          status?: Database['public']['Enums']['order_status']
+          subtotal_cents: number
+          token_hash: string
+          total_cents: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          address?: Json
+          created_at?: string
+          currency?: string
+          email?: string
+          id?: string
+          mollie_payment_id?: string | null
+          name?: string
+          needs_attention?: string | null
+          number?: string
+          paid_at?: string | null
+          phone?: string | null
+          shipping_cents?: number
+          status?: Database['public']['Enums']['order_status']
+          subtotal_cents?: number
+          token_hash?: string
+          total_cents?: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      order_items: {
+        Row: {
+          id: string
+          name: string
+          order_id: string
+          product_id: string | null
+          quantity: number
+          unit_price_cents: number
+        }
+        Insert: {
+          id?: string
+          name: string
+          order_id: string
+          product_id?: string | null
+          quantity: number
+          unit_price_cents: number
+        }
+        Update: {
+          id?: string
+          name?: string
+          order_id?: string
+          product_id?: string | null
+          quantity?: number
+          unit_price_cents?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'order_items_order_id_fkey'
+            columns: ['order_id']
+            isOneToOne: false
+            referencedRelation: 'orders'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'order_items_product_id_fkey'
+            columns: ['product_id']
+            isOneToOne: false
+            referencedRelation: 'products'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      repair_devices: {
+        Row: {
+          active: boolean
+          id: string
+          name: string
+          slug: string
+          sort: number
+        }
+        Insert: {
+          active?: boolean
+          id?: string
+          name: string
+          slug: string
+          sort?: number
+        }
+        Update: {
+          active?: boolean
+          id?: string
+          name?: string
+          slug?: string
+          sort?: number
+        }
+        Relationships: []
+      }
+      repair_issues: {
+        Row: {
+          active: boolean
+          description: string
+          id: string
+          name: string
+          slug: string
+          sort: number
+        }
+        Insert: {
+          active?: boolean
+          description?: string
+          id?: string
+          name: string
+          slug: string
+          sort?: number
+        }
+        Update: {
+          active?: boolean
+          description?: string
+          id?: string
+          name?: string
+          slug?: string
+          sort?: number
+        }
+        Relationships: []
+      }
+      repair_prices: {
+        Row: {
+          days_max: number | null
+          days_min: number | null
+          device_id: string
+          issue_id: string
+          price_from_cents: number | null
+          price_to_cents: number | null
+          updated_at: string
+        }
+        Insert: {
+          days_max?: number | null
+          days_min?: number | null
+          device_id: string
+          issue_id: string
+          price_from_cents?: number | null
+          price_to_cents?: number | null
+          updated_at?: string
+        }
+        Update: {
+          days_max?: number | null
+          days_min?: number | null
+          device_id?: string
+          issue_id?: string
+          price_from_cents?: number | null
+          price_to_cents?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'repair_prices_device_id_fkey'
+            columns: ['device_id']
+            isOneToOne: false
+            referencedRelation: 'repair_devices'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'repair_prices_issue_id_fkey'
+            columns: ['issue_id']
+            isOneToOne: false
+            referencedRelation: 'repair_issues'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      repair_requests: {
+        Row: {
+          brand: string | null
+          created_at: string
+          delivery: Database['public']['Enums']['repair_delivery']
+          description: string
+          device_id: string
+          email: string
+          estimate: Json | null
+          final_price_cents: number | null
+          id: string
+          issue_id: string
+          model: string | null
+          name: string
+          number: string
+          phone: string
+          photo_paths: string[]
+          preferred_date: string | null
+          serial: string | null
+          status: Database['public']['Enums']['repair_status']
+          token_hash: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          brand?: string | null
+          created_at?: string
+          delivery: Database['public']['Enums']['repair_delivery']
+          description: string
+          device_id: string
+          email: string
+          estimate?: Json | null
+          final_price_cents?: number | null
+          id?: string
+          issue_id: string
+          model?: string | null
+          name: string
+          number: string
+          phone: string
+          photo_paths?: string[]
+          preferred_date?: string | null
+          serial?: string | null
+          status?: Database['public']['Enums']['repair_status']
+          token_hash: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          brand?: string | null
+          created_at?: string
+          delivery?: Database['public']['Enums']['repair_delivery']
+          description?: string
+          device_id?: string
+          email?: string
+          estimate?: Json | null
+          final_price_cents?: number | null
+          id?: string
+          issue_id?: string
+          model?: string | null
+          name?: string
+          number?: string
+          phone?: string
+          photo_paths?: string[]
+          preferred_date?: string | null
+          serial?: string | null
+          status?: Database['public']['Enums']['repair_status']
+          token_hash?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'repair_requests_device_id_fkey'
+            columns: ['device_id']
+            isOneToOne: false
+            referencedRelation: 'repair_devices'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'repair_requests_issue_id_fkey'
+            columns: ['issue_id']
+            isOneToOne: false
+            referencedRelation: 'repair_issues'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      repair_events: {
+        Row: {
+          created_at: string
+          id: string
+          note: string | null
+          request_id: string
+          status: Database['public']['Enums']['repair_status']
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          note?: string | null
+          request_id: string
+          status: Database['public']['Enums']['repair_status']
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          note?: string | null
+          request_id?: string
+          status?: Database['public']['Enums']['repair_status']
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'repair_events_request_id_fkey'
+            columns: ['request_id']
+            isOneToOne: false
+            referencedRelation: 'repair_requests'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      repair_notes: {
+        Row: {
+          author: string
+          body: string
+          created_at: string
+          id: string
+          request_id: string
+        }
+        Insert: {
+          author: string
+          body: string
+          created_at?: string
+          id?: string
+          request_id: string
+        }
+        Update: {
+          author?: string
+          body?: string
+          created_at?: string
+          id?: string
+          request_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'repair_notes_request_id_fkey'
+            columns: ['request_id']
+            isOneToOne: false
+            referencedRelation: 'repair_requests'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       wishlist_items: {
         Row: {
           created_at: string
@@ -775,6 +1245,7 @@ export type Database = {
       catalog_facets: { Args: never; Returns: Json }
       f_like_escape: { Args: { '': string }; Returns: string }
       fn_evaluate_achievements: { Args: never; Returns: string[] }
+      mark_order_paid: { Args: { p_order_id: string }; Returns: Json }
       check_rate_limit: {
         Args: { p_bucket: string; p_limit: number; p_window_seconds: number }
         Returns: boolean
@@ -830,6 +1301,18 @@ export type Database = {
       region: 'eu' | 'us' | 'jp'
       visibility: 'private' | 'unlisted' | 'public'
       wish_priority: 'high' | 'medium' | 'low'
+      product_condition: 'new' | 'used' | 'refurbished'
+      order_status:
+        | 'pending_payment'
+        | 'paid'
+        | 'processing'
+        | 'shipped'
+        | 'completed'
+        | 'cancelled'
+        | 'payment_failed'
+      repair_status:
+        'received' | 'in_progress' | 'waiting_parts' | 'repairing' | 'done' | 'ready_or_shipped'
+      repair_delivery: 'appointment' | 'mail_in' | 'drop_off'
     }
     CompositeTypes: {
       [_ in never]: never
