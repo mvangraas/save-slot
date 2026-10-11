@@ -89,6 +89,8 @@ export type CollectionItem = CollectionItemInput & {
   compat: CartCompat
   firstReleaseYear: number | null
   createdAt: string
+  /** Storage paths of the owner's photos of this copy (max 4). */
+  photoPaths: string[]
 }
 
 export type Memory = {
@@ -145,6 +147,30 @@ export interface UserStore {
   listAchievements(): Promise<UnlockedAchievement[]>
   /** Server-side evaluation: stores new unlocks and returns their codes. */
   evaluateAchievements(): Promise<string[]>
+  /** Per-user write limit (120 changes per minute). False = slow down. */
+  allowWrite(): Promise<boolean>
+  /** Everything we store about this user, for the data export. */
+  exportData(): Promise<UserExport>
+  /** Permanently deletes the account and all its data (photos included). */
+  deleteAccount(): Promise<Result>
+  /** Photos of a copy (paths are `<userId>/<itemId>/<file>`). */
+  addPhoto(itemId: string, file: { bytes: Uint8Array; contentType: string }): Promise<Result>
+  removePhoto(itemId: string, path: string): Promise<Result>
+  readPhoto(
+    path: string,
+  ): Promise<{ bytes: Uint8Array; contentType: string } | { url: string } | null>
+}
+
+export type UserExport = {
+  exportedAt: string
+  account: { id: string; email: string }
+  profile: Profile
+  collection: CollectionItem[]
+  wishlist: WishlistEntry[]
+  ratings: { gameId: string; score: number | null; isFavorite: boolean }[]
+  playLogs: PlayEntry[]
+  memories: Memory[]
+  achievements: UnlockedAchievement[]
 }
 
 export type SignUpResult = { needsConfirmation: boolean }

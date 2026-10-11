@@ -21,6 +21,7 @@ import {
   type WishlistEntry,
   type WishlistPatch,
 } from './types'
+import { extFor, MAX_PHOTOS, WRITES_PER_MINUTE } from './limits'
 
 /**
  * In-memory backend for local development and e2e tests, used ONLY when Supabase is not
@@ -31,7 +32,12 @@ import {
 export const SESSION_COOKIE = 'ss_dev_session'
 
 type Account = { id: string; email: string; salt: string; hash: Buffer }
-type ItemRow = CollectionItemInput & { id: string; userId: string; createdAt: string }
+type ItemRow = CollectionItemInput & {
+  id: string
+  userId: string
+  createdAt: string
+  photoPaths: string[]
+}
 type DB = {
   accounts: Map<string, Account> // by email
   sessions: Map<string, string> // token → userId
@@ -43,6 +49,8 @@ type DB = {
   memories: (Memory & { userId: string })[]
   achievements: Map<string, Map<string, string>> // userId → code → unlockedAt
   wishGranted: Set<string> // userIds
+  photos: Map<string, { bytes: Uint8Array; contentType: string }> // path → file
+  writes: Map<string, number[]> // userId → recent write timestamps
 }
 
 const g = globalThis as unknown as { __saveslotMemoryDb?: DB }
@@ -57,9 +65,13 @@ const db: DB = (g.__saveslotMemoryDb ??= {
   memories: [],
   achievements: new Map(),
   wishGranted: new Set(),
+  photos: new Map(),
+  writes: new Map(),
 })
 db.achievements ??= new Map()
 db.wishGranted ??= new Set()
+db.photos ??= new Map()
+db.writes ??= new Map()
 
 // ---- catalogue lookups (seed ids: game `seed:<slug>`, release `seed:<slug>:<region>`)
 const gamesById = new Map(seedGames.map((game) => [`seed:${game.slug}`, game]))
@@ -196,7 +208,13 @@ function storeFor(user: SessionUser): UserStore {
     async addItem(input) {
       if (!release(input.releaseId)) return fail('Unknown release.')
       const id = randomUUID()
-      db.items.push({ ...input, id, userId: user.id, createdAt: new Date().toISOString() })
+      db.items.push({
+        ...input,
+        id,
+        userId: user.id,
+        createdAt: new Date().toISOString(),
+        photoPaths: [],
+      })
       return ok({ id })
     },
     async updateItem(id, input) {
@@ -207,6 +225,10 @@ function storeFor(user: SessionUser): UserStore {
       return ok(undefined)
     },
     async removeItem(id) {
+      for (const path of db.items.find((i) => i.id === id && i.userId === user.id)?.photoPaths ??
+        []) {
+        db.photos.delete(path)
+      }
       const before = db.items.length
       db.items = db.items.filter((i) => !(i.id === id && i.userId === user.id))
       return before === db.items.length ? fail('Item not found.') : ok(undefined)
@@ -330,6 +352,70 @@ function storeFor(user: SessionUser): UserStore {
       for (const code of fresh) mineA.set(code, now)
       return fresh
     },
+    async allowWrite() {
+      const now = Date.now()
+      const recent = (db.writes.get(user.id) ?? []).filter((t) => t > now - 60_000)
+      recent.push(now)
+      db.writes.set(user.id, recent)
+      return recent.length <= WRITES_PER_MINUTE
+    },
+    async exportData() {
+      const prefix = `${user.id}:`
+      return {
+        exportedAt: new Date().toISOString(),
+        account: { id: user.id, email: user.email },
+        profile: await this.getProfile(),
+        collection: await this.listCollection(),
+        wishlist: await this.listWishlist(),
+        ratings: [...db.ratings.entries()]
+          .filter(([k]) => k.startsWith(prefix))
+          .map(([k, r]) => ({ gameId: k.slice(prefix.length), ...r })),
+        playLogs: await this.listPlayLogs(),
+        memories: db.memories
+          .filter((m) => m.userId === user.id)
+          .map(({ userId: _u, ...m }) => (void _u, m)),
+        achievements: await this.listAchievements(),
+      }
+    },
+    async deleteAccount() {
+      const prefix = `${user.id}:`
+      for (const i of db.items.filter((x) => x.userId === user.id)) {
+        for (const path of i.photoPaths) db.photos.delete(path)
+      }
+      db.items = db.items.filter((i) => i.userId !== user.id)
+      db.memories = db.memories.filter((m) => m.userId !== user.id)
+      for (const map of [db.ratings, db.plays, db.wishlist] as Map<string, unknown>[]) {
+        for (const k of [...map.keys()]) if (k.startsWith(prefix)) map.delete(k)
+      }
+      db.achievements.delete(user.id)
+      db.wishGranted.delete(user.id)
+      db.writes.delete(user.id)
+      db.profiles.delete(user.id)
+      for (const [token, uid] of db.sessions) if (uid === user.id) db.sessions.delete(token)
+      for (const [email, acc] of db.accounts) if (acc.id === user.id) db.accounts.delete(email)
+      ;(await cookies()).delete(SESSION_COOKIE)
+      return ok(undefined)
+    },
+    async addPhoto(itemId, file) {
+      const row = db.items.find((i) => i.id === itemId && i.userId === user.id)
+      if (!row) return fail('Item not found.')
+      if (row.photoPaths.length >= MAX_PHOTOS) return fail(`Max ${MAX_PHOTOS} photos per copy.`)
+      const path = `${user.id}/${itemId}/${randomUUID()}.${extFor(file.contentType)}`
+      db.photos.set(path, file)
+      row.photoPaths.push(path)
+      return ok(undefined)
+    },
+    async removePhoto(itemId, path) {
+      const row = db.items.find((i) => i.id === itemId && i.userId === user.id)
+      if (!row || !row.photoPaths.includes(path)) return fail('Photo not found.')
+      row.photoPaths = row.photoPaths.filter((p) => p !== path)
+      db.photos.delete(path)
+      return ok(undefined)
+    },
+    async readPhoto(path) {
+      if (!path.startsWith(`${user.id}/`)) return null
+      return db.photos.get(path) ?? null
+    },
     async updateWishlistItem(gameId, patch) {
       const current = db.wishlist.get(key(gameId))
       if (!current) return fail('Not on your wishlist.')
@@ -357,4 +443,6 @@ export function resetMemoryBackend() {
   db.memories = []
   db.achievements.clear()
   db.wishGranted.clear()
+  db.photos.clear()
+  db.writes.clear()
 }

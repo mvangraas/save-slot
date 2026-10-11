@@ -1,11 +1,13 @@
 'use server'
 
+import { RATE_LIMITED } from '@/lib/backend/schemas'
 import { refresh } from 'next/cache'
 import { requireUser } from '@/lib/backend'
 import { fieldErrors, profileSchema, type FormState } from '@/lib/backend/schemas'
 
 export async function updateProfileAction(_prev: FormState, form: FormData): Promise<FormState> {
   const { store } = await requireUser('/settings')
+  if (!(await store.allowWrite())) return RATE_LIMITED
   const parsed = profileSchema.safeParse({
     username: form.get('username'),
     displayName: form.get('displayName'),

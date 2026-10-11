@@ -1,5 +1,6 @@
 'use server'
 
+import { RATE_LIMITED } from '@/lib/backend/schemas'
 import { saveProgress } from '@/lib/achievements/server'
 import { requireUser } from '@/lib/backend'
 import {
@@ -28,6 +29,7 @@ export async function addCollectionItemAction(
   form: FormData,
 ): Promise<FormState> {
   const { store } = await requireUser(String(form.get('returnTo') ?? '/collection'))
+  if (!(await store.allowWrite())) return RATE_LIMITED
   const parsed = collectionItemSchema.safeParse(itemFields(form))
   if (!parsed.success) return { errors: fieldErrors(parsed.error) }
   const res = await store.addItem(parsed.data)
@@ -41,6 +43,7 @@ export async function updateCollectionItemAction(
   form: FormData,
 ): Promise<FormState> {
   const { store } = await requireUser(String(form.get('returnTo') ?? '/collection'))
+  if (!(await store.allowWrite())) return RATE_LIMITED
   const id = idSchema.safeParse(form.get('id'))
   const parsed = collectionItemSchema.safeParse(itemFields(form))
   if (!id.success) return { message: 'Item not found.' }
@@ -53,6 +56,7 @@ export async function updateCollectionItemAction(
 
 export async function removeCollectionItemAction(form: FormData): Promise<void> {
   const { store } = await requireUser('/collection')
+  if (!(await store.allowWrite())) return
   const id = idSchema.safeParse(form.get('id'))
   if (!id.success) return
   await store.removeItem(id.data)
@@ -62,6 +66,7 @@ export async function removeCollectionItemAction(form: FormData): Promise<void> 
 /** Bulk actions on selected copies in the collection table. */
 export async function bulkCollectionAction(_prev: FormState, form: FormData): Promise<FormState> {
   const { store } = await requireUser('/collection?view=table')
+  if (!(await store.allowWrite())) return RATE_LIMITED
   const parsed = bulkSchema.safeParse({ op: form.get('op'), ids: form.getAll('ids') })
   if (!parsed.success) return { message: fieldErrors(parsed.error).ids ?? 'Choose an action.' }
   const { op, ids } = parsed.data

@@ -1,5 +1,6 @@
 'use server'
 
+import { RATE_LIMITED } from '@/lib/backend/schemas'
 import { saveProgress } from '@/lib/achievements/server'
 import { requireUser } from '@/lib/backend'
 import {
@@ -15,6 +16,7 @@ const back = (form: FormData) => String(form.get('returnTo') ?? '/games')
 
 export async function setScoreAction(form: FormData): Promise<void> {
   const { store } = await requireUser(back(form))
+  if (!(await store.allowWrite())) return
   const gameId = idSchema.safeParse(form.get('gameId'))
   const raw = form.get('score')
   const parsed = scoreSchema.safeParse(raw === '' || raw === null ? null : raw)
@@ -25,6 +27,7 @@ export async function setScoreAction(form: FormData): Promise<void> {
 
 export async function setFavoriteAction(form: FormData): Promise<void> {
   const { store } = await requireUser(back(form))
+  if (!(await store.allowWrite())) return
   const gameId = idSchema.safeParse(form.get('gameId'))
   if (!gameId.success) return
   await store.setRating(gameId.data, { isFavorite: form.get('isFavorite') === 'true' })
@@ -33,6 +36,7 @@ export async function setFavoriteAction(form: FormData): Promise<void> {
 
 export async function setPlayStatusAction(form: FormData): Promise<void> {
   const { store } = await requireUser(back(form))
+  if (!(await store.allowWrite())) return
   const gameId = idSchema.safeParse(form.get('gameId'))
   const status = playStatusSchema.safeParse(form.get('status') ?? '')
   if (!gameId.success || !status.success) return
@@ -42,6 +46,7 @@ export async function setPlayStatusAction(form: FormData): Promise<void> {
 
 export async function toggleWishlistAction(form: FormData): Promise<void> {
   const { store } = await requireUser(back(form))
+  if (!(await store.allowWrite())) return
   const gameId = idSchema.safeParse(form.get('gameId'))
   if (!gameId.success) return
   await store.setWishlisted(gameId.data, form.get('wishlisted') === 'true')
@@ -50,6 +55,7 @@ export async function toggleWishlistAction(form: FormData): Promise<void> {
 
 export async function addMemoryAction(_prev: FormState, form: FormData): Promise<FormState> {
   const { store } = await requireUser(back(form))
+  if (!(await store.allowWrite())) return RATE_LIMITED
   const gameId = idSchema.safeParse(form.get('gameId'))
   const parsed = memorySchema.safeParse({
     body: form.get('body'),
@@ -66,6 +72,7 @@ export async function addMemoryAction(_prev: FormState, form: FormData): Promise
 
 export async function removeMemoryAction(form: FormData): Promise<void> {
   const { store } = await requireUser(back(form))
+  if (!(await store.allowWrite())) return
   const id = idSchema.safeParse(form.get('id'))
   if (!id.success) return
   await store.removeMemory(id.data)

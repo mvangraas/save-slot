@@ -166,3 +166,7 @@ export const bulkSchema = z.object({
   op: z.enum(BULK_OPS),
   ids: z.array(z.string().min(1).max(80)).min(1, 'Select at least one copy.').max(500),
 })
+
+export const RATE_LIMITED: FormState = {
+  message: 'Too many changes in a short time. Take a breather and try again in a minute.',
+}

@@ -8,6 +8,7 @@ import { Sticker } from '@/components/retro/Sticker'
 import { conditionLabel, type CollectionItem } from '@/lib/backend/types'
 import { formatEuro } from '@/lib/format'
 import { ItemForm, type ReleaseOption } from './ItemForm'
+import { ItemPhotos } from './ItemPhotos'
 
 /** One owned copy on the game page, with inline edit and remove. */
 export function ItemCard({
@@ -47,6 +48,8 @@ export function ItemCard({
         ) : null}
       </div>
       {item.notes && !editing ? <p className="text-sm">{item.notes}</p> : null}
+
+      <ItemPhotos item={item} returnTo={returnTo} />
 
       {editing ? (
         <ItemForm

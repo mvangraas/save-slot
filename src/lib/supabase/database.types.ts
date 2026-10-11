@@ -775,6 +775,10 @@ export type Database = {
       catalog_facets: { Args: never; Returns: Json }
       f_like_escape: { Args: { '': string }; Returns: string }
       fn_evaluate_achievements: { Args: never; Returns: string[] }
+      check_rate_limit: {
+        Args: { p_bucket: string; p_limit: number; p_window_seconds: number }
+        Returns: boolean
+      }
       f_search_norm: { Args: { '': string }; Returns: string }
       f_unaccent: { Args: { '': string }; Returns: string }
       refresh_game_derived: { Args: { p_game_id: string }; Returns: undefined }

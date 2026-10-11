@@ -2,7 +2,9 @@
 
 import { redirect } from 'next/navigation'
 import { getBackend, safeNext } from '@/lib/backend'
+import { clientIp } from '@/lib/backend/client-ip'
 import { requestOrigin } from '@/lib/backend/origin'
+import { createLimiter } from '@/lib/rate-limit'
 import {
   fieldErrors,
   magicLinkSchema,
@@ -11,10 +13,21 @@ import {
   type FormState,
 } from '@/lib/backend/schemas'
 
+// 10 auth attempts per IP per 10 minutes (generous for e2e runs, which share one IP).
+const authLimiter = createLimiter({
+  limit: process.env.E2E === '1' ? 1000 : 10,
+  windowMs: 10 * 60_000,
+})
+const TOO_MANY: FormState = {
+  message: 'Too many attempts. Wait a few minutes and try again.',
+}
+const allowed = async (action: string) => authLimiter.hit(`${action}:${await clientIp()}`)
+
 const callbackUrl = async (next: string) =>
   `${await requestOrigin()}/auth/callback?next=${encodeURIComponent(next)}`
 
 export async function signInAction(_prev: FormState, form: FormData): Promise<FormState> {
+  if (!(await allowed('signin'))) return TOO_MANY
   const parsed = signInSchema.safeParse({
     email: form.get('email'),
     password: form.get('password'),
@@ -26,6 +39,7 @@ export async function signInAction(_prev: FormState, form: FormData): Promise<Fo
 }
 
 export async function signUpAction(_prev: FormState, form: FormData): Promise<FormState> {
+  if (!(await allowed('signup'))) return TOO_MANY
   const parsed = signUpSchema.safeParse({
     email: form.get('email'),
     password: form.get('password'),
@@ -48,6 +62,7 @@ export async function signUpAction(_prev: FormState, form: FormData): Promise<Fo
 }
 
 export async function magicLinkAction(_prev: FormState, form: FormData): Promise<FormState> {
+  if (!(await allowed('magic'))) return TOO_MANY
   const parsed = magicLinkSchema.safeParse({ email: form.get('email') })
   if (!parsed.success) return { errors: fieldErrors(parsed.error) }
   const res = await getBackend().auth.sendMagicLink(

@@ -1,4 +1,6 @@
 import 'server-only'
+import { createSupabaseAdminClient } from '@/lib/supabase/admin'
+import { extFor, MAX_PHOTOS, WRITES_PER_MINUTE } from './limits'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/lib/supabase/database.types'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
@@ -80,7 +82,7 @@ const auth: AuthBackend = {
 }
 
 const itemSelect = `id, release_id, has_cart, has_box, has_manual, condition, purchase_price_cents,
-  purchase_currency, purchased_on, notes, created_at,
+  purchase_currency, purchased_on, notes, created_at, photo_paths,
   release:releases!inner ( region, local_title,
     game:games!inner ( id, slug, title, platform, compat, first_release_year ) )` as const
 
@@ -96,6 +98,7 @@ type ItemRow = {
   purchased_on: string | null
   notes: string | null
   created_at: string
+  photo_paths: string[]
   release: {
     region: CollectionItem['region']
     local_title: string | null
@@ -110,6 +113,8 @@ type ItemRow = {
   }
 }
 
+const PHOTO_BUCKET = 'collection-photos'
+
 function toItem(r: ItemRow): CollectionItem {
   return {
     id: r.id,
@@ -123,6 +128,7 @@ function toItem(r: ItemRow): CollectionItem {
     purchasedOn: r.purchased_on,
     notes: r.notes,
     createdAt: r.created_at,
+    photoPaths: r.photo_paths ?? [],
     region: r.release.region,
     localTitle: r.release.local_title,
     gameId: r.release.game.id,
@@ -211,6 +217,13 @@ function storeFor(db: DB, user: SessionUser): UserStore {
       return count === 0 ? fail('Item not found.') : ok(undefined)
     },
     async removeItem(id) {
+      const { data: item } = await db
+        .from('collection_items')
+        .select('photo_paths')
+        .eq('id', id)
+        .eq('user_id', uid)
+        .maybeSingle()
+      if (item?.photo_paths.length) await db.storage.from(PHOTO_BUCKET).remove(item.photo_paths)
       const { error, count } = await db
         .from('collection_items')
         .delete({ count: 'exact' })
@@ -401,6 +414,135 @@ function storeFor(db: DB, user: SessionUser): UserStore {
         .order('unlocked_at', { ascending: false })
       if (error) throw new Error(`achievements: ${error.message}`)
       return data.map((r) => ({ code: r.achievement_code, unlockedAt: r.unlocked_at }))
+    },
+    async allowWrite() {
+      const { data, error } = await db.rpc('check_rate_limit', {
+        p_bucket: 'writes',
+        p_limit: WRITES_PER_MINUTE,
+        p_window_seconds: 60,
+      })
+      if (error) {
+        // Never block a save because the limiter itself failed; just log it.
+        console.error('[rate-limit]', error.message)
+        return true
+      }
+      return data === true
+    },
+    async exportData() {
+      const [profile, collection, wishlist, playLogs, achievements, ratings, memories] =
+        await Promise.all([
+          this.getProfile(),
+          this.listCollection(),
+          this.listWishlist(),
+          this.listPlayLogs(),
+          this.listAchievements(),
+          db.from('ratings').select('game_id, score, is_favorite').eq('user_id', uid),
+          db
+            .from('memories')
+            .select('id, game_id, body, year_remembered, is_public, created_at')
+            .eq('user_id', uid)
+            .order('created_at'),
+        ])
+      if (ratings.error) throw new Error(`export ratings: ${ratings.error.message}`)
+      if (memories.error) throw new Error(`export memories: ${memories.error.message}`)
+      return {
+        exportedAt: new Date().toISOString(),
+        account: { id: uid, email: user.email },
+        profile,
+        collection,
+        wishlist,
+        ratings: ratings.data.map((r) => ({
+          gameId: r.game_id,
+          score: r.score,
+          isFavorite: r.is_favorite,
+        })),
+        playLogs,
+        memories: memories.data.map((m) => ({
+          id: m.id,
+          gameId: m.game_id,
+          body: m.body,
+          yearRemembered: m.year_remembered,
+          isPublic: m.is_public,
+          createdAt: m.created_at,
+        })),
+        achievements,
+      }
+    },
+    async deleteAccount() {
+      // 1. Photos (storage is not cascaded by the database).
+      const { data: items, error: listError } = await db
+        .from('collection_items')
+        .select('photo_paths')
+        .eq('user_id', uid)
+      if (listError) return fail(dbError(listError))
+      const paths = items.flatMap((i) => i.photo_paths)
+      for (let i = 0; i < paths.length; i += 100) {
+        const { error } = await db.storage.from(PHOTO_BUCKET).remove(paths.slice(i, i + 100))
+        if (error) return fail('Could not delete your photos. Please try again.')
+      }
+      // 2. The account itself, via the Auth admin API; every table cascades from auth.users.
+      const admin = createSupabaseAdminClient()
+      if (!admin) return fail('Account deletion is not configured yet. Please contact us.')
+      const { error } = await admin.auth.admin.deleteUser(uid)
+      if (error) {
+        console.error('[delete-account]', error.message)
+        return fail('Could not delete your account. Please try again.')
+      }
+      // Clear the session cookies; the server-side session is already gone with the user.
+      await db.auth.signOut({ scope: 'local' }).catch(() => undefined)
+      return ok(undefined)
+    },
+    async addPhoto(itemId, file) {
+      const { data: item, error } = await db
+        .from('collection_items')
+        .select('photo_paths')
+        .eq('id', itemId)
+        .eq('user_id', uid)
+        .maybeSingle()
+      if (error) return fail(dbError(error))
+      if (!item) return fail('Item not found.')
+      if (item.photo_paths.length >= MAX_PHOTOS) return fail(`Max ${MAX_PHOTOS} photos per copy.`)
+      const path = `${uid}/${itemId}/${crypto.randomUUID()}.${extFor(file.contentType)}`
+      const up = await db.storage
+        .from(PHOTO_BUCKET)
+        .upload(path, file.bytes, { contentType: file.contentType, upsert: false })
+      if (up.error) {
+        console.error('[photos]', up.error.message)
+        return fail('Upload failed. Please try again.')
+      }
+      const { error: saveError } = await db
+        .from('collection_items')
+        .update({ photo_paths: [...item.photo_paths, path] })
+        .eq('id', itemId)
+        .eq('user_id', uid)
+      if (saveError) {
+        await db.storage.from(PHOTO_BUCKET).remove([path])
+        return fail(dbError(saveError))
+      }
+      return ok(undefined)
+    },
+    async removePhoto(itemId, path) {
+      const { data: item, error } = await db
+        .from('collection_items')
+        .select('photo_paths')
+        .eq('id', itemId)
+        .eq('user_id', uid)
+        .maybeSingle()
+      if (error) return fail(dbError(error))
+      if (!item || !item.photo_paths.includes(path)) return fail('Photo not found.')
+      const { error: saveError } = await db
+        .from('collection_items')
+        .update({ photo_paths: item.photo_paths.filter((p) => p !== path) })
+        .eq('id', itemId)
+        .eq('user_id', uid)
+      if (saveError) return fail(dbError(saveError))
+      await db.storage.from(PHOTO_BUCKET).remove([path])
+      return ok(undefined)
+    },
+    async readPhoto(path) {
+      if (!path.startsWith(`${uid}/`)) return null
+      const { data, error } = await db.storage.from(PHOTO_BUCKET).createSignedUrl(path, 60)
+      return error || !data ? null : { url: data.signedUrl }
     },
     async evaluateAchievements() {
       const { data, error } = await db.rpc('fn_evaluate_achievements')

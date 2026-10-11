@@ -22,6 +22,7 @@ const item = (over: Partial<CollectionItem>): CollectionItem => ({
   compat: 'gb',
   firstReleaseYear: 1989,
   createdAt: '2026-01-01T00:00:00Z',
+  photoPaths: [],
   ...over,
 })
 

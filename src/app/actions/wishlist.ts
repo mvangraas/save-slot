@@ -1,5 +1,6 @@
 'use server'
 
+import { RATE_LIMITED } from '@/lib/backend/schemas'
 import { saveProgress } from '@/lib/achievements/server'
 import { requireUser } from '@/lib/backend'
 import {
@@ -12,6 +13,7 @@ import {
 
 export async function updateWishlistAction(_prev: FormState, form: FormData): Promise<FormState> {
   const { store } = await requireUser('/wishlist')
+  if (!(await store.allowWrite())) return RATE_LIMITED
   const gameId = idSchema.safeParse(form.get('gameId'))
   const parsed = wishlistSchema.safeParse({
     priority: form.get('priority'),
@@ -31,6 +33,7 @@ export async function updateWishlistAction(_prev: FormState, form: FormData): Pr
 
 export async function removeFromWishlistAction(form: FormData): Promise<void> {
   const { store } = await requireUser('/wishlist')
+  if (!(await store.allowWrite())) return
   const gameId = idSchema.safeParse(form.get('gameId'))
   if (!gameId.success) return
   await store.setWishlisted(gameId.data, false)
@@ -40,6 +43,7 @@ export async function removeFromWishlistAction(form: FormData): Promise<void> {
 /** "GOT IT!": add the copy to the collection, then take the game off the wishlist. */
 export async function gotItAction(_prev: FormState, form: FormData): Promise<FormState> {
   const { store } = await requireUser('/wishlist')
+  if (!(await store.allowWrite())) return RATE_LIMITED
   const gameId = idSchema.safeParse(form.get('gameId'))
   const parsed = collectionItemSchema.safeParse({
     releaseId: form.get('releaseId'),

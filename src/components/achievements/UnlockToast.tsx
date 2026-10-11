@@ -14,7 +14,8 @@ type Unlock = { code: string; name: string; icon: IconKey; platform: Platform | 
 const announced = new Set<string>()
 
 const tone = {
-  gb: 'bg-lcd-200 text-lcd-900',
+  // Inverted for GB so the sticker stands out on the green toast.
+  gb: 'bg-lcd-900 text-lcd-200',
   gbc: 'bg-gbc-soft text-gbc-deep',
   any: 'bg-sticker text-ink',
 }

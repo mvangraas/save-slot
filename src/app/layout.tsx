@@ -3,6 +3,7 @@ import { IBM_Plex_Mono, IBM_Plex_Sans, Press_Start_2P, Silkscreen } from 'next/f
 import { AppShell } from '@/components/layout/AppShell'
 import { bootScript } from '@/config/boot-script'
 import { site } from '@/config/site'
+import { siteUrl } from '@/lib/site-url'
 import './globals.css'
 
 const pressStart = Press_Start_2P({
@@ -27,7 +28,7 @@ const plexMono = IBM_Plex_Mono({
 })
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'),
+  metadataBase: new URL(siteUrl()),
   title: { default: `${site.name} — ${site.tagline}`, template: `%s · ${site.name}` },
   description: site.description,
   applicationName: site.name,
